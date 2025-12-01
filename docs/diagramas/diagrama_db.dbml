@@ -1,0 +1,81 @@
+// Copia este código en dbdiagram.io para editar el diagrama en el futuro
+
+Table users {
+  id uuid [pk]
+  email varchar [not null]
+  password_hash varchar [not null]
+  role varchar [not null]
+  verificado boolean
+  plan varchar
+  estado varchar
+  created_at timestamp
+}
+
+Table protectoras {
+  id uuid [pk]
+  nombre varchar [not null]
+  direccion varchar
+  telefono varchar
+  estado varchar
+}
+
+Table protectora_admins {
+  user_id uuid [ref: > users.id]
+  protectora_id uuid [ref: > protectoras.id]
+}
+
+Table animales {
+  id uuid [pk]
+  protectora_id uuid [ref: > protectoras.id]
+  nombre varchar [not null]
+  descripcion text
+  edad integer
+  especie varchar
+  foto_url varchar
+  estado varchar
+  urgent boolean
+  created_at timestamp
+}
+
+Table colonias {
+  id uuid [pk]
+  gestor_id uuid [ref: > users.id]
+  nombre varchar [not null]
+  latitud float
+  longitud float
+  descripcion text
+  estado varchar
+}
+
+Table posts {
+  id uuid [pk]
+  publicador_id uuid [ref: > users.id]
+  titulo varchar [not null]
+  contenido text
+  categoria varchar
+  estado varchar
+  prioridad varchar
+  created_at timestamp
+}
+
+Table solicitudes_adopcion {
+  id uuid [pk]
+  animal_id uuid [ref: > animales.id]
+  solicitante_id uuid [ref: > users.id]
+  estado varchar
+  mensaje text
+  created_at timestamp
+}
+
+Table necesidades {
+  id uuid [pk]
+  publicador_id uuid [ref: > users.id]
+  protectora_id uuid [ref: > protectoras.id]
+  colonia_id uuid [ref: > colonias.id]
+  titulo varchar [not null]
+  descripcion text
+  categoria varchar
+  prioridad varchar
+  estado varchar
+  created_at timestamp
+}

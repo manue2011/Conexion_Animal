@@ -11,3 +11,10 @@ build/
 # Logs
 npm-debug.log*
 yarn-debug.log*
+
+
+# Ignorar fuentes de diagramas (solo subir imágenes)
+# *.plantuml
+# *.puml
+# *.mermaid
+# *.dbml

@@ -3,13 +3,18 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db'); // Importamos la conexión
-require('dotenv').config();
 
 const app = express();
 
 // Middlewares básicos
 app.use(cors());
 app.use(express.json()); // Para que el servidor entienda JSON
+
+const animalRoutes = require('./routes/animalRoutes');
+app.use('/api/animales', animalRoutes);
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
+
 
 // Ruta de prueba (Health Check)
 app.get('/health', async (req, res) => {

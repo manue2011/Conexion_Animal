@@ -1,0 +1,44 @@
+@startuml
+
+actor Gestor
+participant "Frontend\n(React)" as Frontend
+participant "Backend API\n(Node.js)" as API
+participant "Base de Datos\n(PostgreSQL)" as DB
+participant "SendGrid API" as SendGrid
+
+Gestor -> Frontend: Clica "Publicar Urgencia"
+activate Gestor
+activate Frontend
+
+Frontend -> API: POST /api/necesidades\n{ titulo, descripcion, prioridad="urgente" }
+activate API
+
+API -> API: Verifica JWT + Rol = Gestor
+API -> API: Verifica Gestor.verificado = true
+
+API -> DB: INSERT INTO necesidades(...)
+activate DB
+
+DB --> API: 200 OK (registro creado)
+deactivate DB
+
+opt #LightCyan Si prioridad = "urgente"
+  API -> DB: SELECT email FROM users WHERE role='voluntario'
+  activate DB
+  DB --> API: ['vol1@mail.com', 'vol2@mail.com', ...]
+  deactivate DB
+  
+  API -> SendGrid: POST /v3/mail/send\n{ to: emails[], subject: "¡URGENTE!" }
+  activate SendGrid
+  SendGrid --> API: 202 Accepted
+  deactivate SendGrid
+end
+
+API --> Frontend: 200 OK { "alerta": "publicada" }
+deactivate API
+
+Frontend --> Gestor: Muestra "Alerta enviada a 50 voluntarios"
+deactivate Frontend
+deactivate Gestor
+
+@enduml

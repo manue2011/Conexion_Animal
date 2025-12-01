@@ -1,0 +1,42 @@
+@startuml
+
+' ACTORES
+left to right direction
+actor "Usuario Registrado" as User
+actor "Admin de Protectora" as Admin
+actor "Gestor de Colonia\n(Verificado)" as Gestor
+
+' GENERALIZACIÓN (Los admins también son usuarios)
+Admin --|> User
+Gestor --|> User
+
+' PAQUETE: Portal Público
+rectangle "Portal Público" {
+  User --> (Ver Galería de Animales)
+  User --> (Filtrar Animales)
+  User --> (Ver Detalle de Animal)
+  User --> (Solicitar Adopción)
+}
+
+' PAQUETE: Gestión Interna
+rectangle "Gestión Interna" {
+  Admin --> (Gestionar Animales)
+  Admin --> (Moderar Posts)
+  Admin --> (Consultar Métricas)
+  Gestor --> (Gestionar Colonias)
+}
+
+' PAQUETE: Tablón de Ayuda
+rectangle "Tablón de Ayuda" {
+  User --> (Crear Post)
+  Admin --> (Aprobar/Rechazar Post)
+}
+
+' PAQUETE: Alertas Urgentes
+rectangle "Alertas Urgentes" {
+  Admin --> (Publicar Necesidad Urgente)
+  Gestor --> (Publicar Necesidad Urgente)
+  (Publicar Necesidad Urgente) ..> (Enviar Email Automático) : <<include>>
+}
+
+@enduml
