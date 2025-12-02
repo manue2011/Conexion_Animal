@@ -27,7 +27,7 @@ Table protectora_admins {
 Table animales {
   id uuid [pk]
   protectora_id uuid [ref: > protectoras.id]
-  nombre varchar [not null]
+  nombre varchar [not null] 
   descripcion text
   edad integer
   especie varchar
@@ -78,4 +78,13 @@ Table necesidades {
   prioridad varchar
   estado varchar
   created_at timestamp
+}
+
+Table solicitudes_rol {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, ref: > users.id]
+  rol_solicitado varchar [not null, note: 'gestor, admin']
+  mensaje text [note: 'Motivo: CIF, zona, experiencia...']
+  estado varchar [default: 'pendiente', note: 'pendiente, aprobado, rechazado']
+  created_at timestamp [default: `now()`]
 }

@@ -49,17 +49,17 @@ const createAnimal = async (req, res) => {
 };
 const getAnimals = async (req, res) => {
   try {
-    // Seleccionamos solo los que no han sido borrados (Soft Delete)
-    // Recuerda el Glossario: estado 'activo' [cite: 3]
+    // ERROR COMÚN: 'SELECT * FROM animales' <--- Esto trae activos y adoptados.
+    // SOLUCIÓN: Añadir el WHERE estado = 'activo'
+    
     const response = await pool.query(
-      "SELECT * FROM animales WHERE estado = $1",
-      ["activo"]
+      "SELECT * FROM animales WHERE estado = 'activo'"
     );
-
+    
     res.json(response.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).send("Error al obtener animales");
+    res.status(500).send('Error al obtener animales');
   }
 };
 // ... (código anterior: createAnimal y getAnimals) ...

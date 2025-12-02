@@ -18,11 +18,13 @@ const register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // C. Insertar en Base de Datos ( usamos 'password_hash' como en el schema.sql)
-    // Por defecto el rol será 'user' si no se especifica, y 'verificado' es false.
-    const newUser = await pool.query(
+    
+
+   // En el INSERT, escribimos 'user' manualmente en el tercer valor ($3).
+    // Así garantizamos que NADIE nace siendo admin es false.
+   const newUser = await pool.query(
       'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3) RETURNING id, email, role',
-      [email, passwordHash, role || 'user']
+      [email, passwordHash, 'user']
     );
 
     // D. Generar Token JWT (El "pase" de sesión)

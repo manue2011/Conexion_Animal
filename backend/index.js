@@ -14,7 +14,8 @@ const animalRoutes = require('./routes/animalRoutes');
 app.use('/api/animales', animalRoutes);
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
-
+const adopcionRoutes = require('./routes/adopcionRoutes');
+app.use('/api/adopciones', adopcionRoutes);
 
 // Ruta de prueba (Health Check)
 app.get('/health', async (req, res) => {
