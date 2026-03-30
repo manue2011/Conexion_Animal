@@ -12,7 +12,7 @@ const HomePage = () => {
     const fetchAnimales = async () => {
       try {
         // Esta ruta es pública, no requiere token
-        const response = await axios.get('http://localhost:3000/api/animales');
+        const response = await axios.get('http://localhost:3000/api/animales/public');
         setAnimales(response.data);
         setLoading(false);
       } catch (error) {

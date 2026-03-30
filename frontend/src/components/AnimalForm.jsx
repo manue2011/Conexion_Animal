@@ -37,7 +37,7 @@ const AnimalForm = ({ onSuccess }) => {
       data.append('especie', formData.especie);
       data.append('urgent', formData.urgent);
       if (file) {
-        data.append('image', file); // 'image' debe coincidir con upload.single('image') del backend
+        data.append('foto_url', file); // 'image' debe coincidir con upload.single('image') del backend
       }
 
       // 2. Obtener el token del almacenamiento

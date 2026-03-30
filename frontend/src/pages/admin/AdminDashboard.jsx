@@ -23,7 +23,10 @@ const AdminDashboard = () => {
     const token = localStorage.getItem('token');
     if (!token || !userData) { navigate('/login'); return; }
     const parsedUser = JSON.parse(userData);
-    if (parsedUser.role !== 'admin') { navigate('/'); return; }
+   if (parsedUser.role !== 'admin' && parsedUser.role !== 'superadmin') { 
+      navigate('/'); 
+      return; 
+    }
     setUser(parsedUser);
   }, [navigate]);
 
@@ -98,7 +101,10 @@ const AdminDashboard = () => {
       {/* BARRA LATERAL (SIDEBAR) */}
       <aside className="w-64 bg-slate-800 text-white flex flex-col shadow-xl">
         <div className="p-6 text-center border-b border-slate-700">
-          <h2 className="text-2xl font-bold tracking-wider">PANEL ADMIN</h2>
+          
+      <h2 className="text-2xl font-bold tracking-wider">
+      PANEL {user.role === 'superadmin' ? 'SUPREMO' : 'ADMIN'}
+    </h2>
         </div>
         
         <nav className="flex-1 p-4 space-y-2">

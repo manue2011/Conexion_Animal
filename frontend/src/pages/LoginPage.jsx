@@ -5,20 +5,11 @@ import { useNavigate, Link } from 'react-router-dom';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-
-  // Estado del formulario
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
@@ -27,24 +18,22 @@ const LoginPage = () => {
 
     try {
       const response = await axios.post('http://localhost:3000/api/auth/login', formData);
-      
-      // 1. OBTENER EL TOKEN Y EL USUARIO
       const { token, user } = response.data;
 
-      // 2. GUARDAR EN LOCALSTORAGE (La "memoria" del navegador)
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
 
-      // 3. REDIRECCIONAR SEGÚN ROL
-      // Si es admin, lo mandamos a una zona especial (futuro Dashboard)
-      // Si es usuario normal, a la Home.
-      if (user.role === 'admin') {
-        navigate('/admin/dashboard'); // (Esta ruta la crearemos luego, de momento dará 404 pero es correcto)
+      // 3. REDIRECCIONAR SEGÚN ROL (Actualizado)
+      if (user.role === 'superadmin') {
+        navigate('/superadmin/dashboard'); // Tú vas aquí
+      }else if (user.role === 'gestor') {
+        navigate('/colonia/dashboard');
+      }else if (user.role === 'admin') {
+        navigate('/admin/dashboard'); // Las protectoras van aquí
       } else {
-        navigate('/');
+        navigate('/'); // Los usuarios normales van a la home
       }
 
-      // Truco para recargar el estado de la app (temporal hasta que usemos Context)
       window.location.reload(); 
 
     } catch (err) {

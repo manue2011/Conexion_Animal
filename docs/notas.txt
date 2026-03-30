@@ -1,0 +1,2 @@
+iniciar backend=node index.js
+iniciar frontend = npm run dev
