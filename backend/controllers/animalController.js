@@ -4,39 +4,50 @@ const cloudinary = require("../config/cloudinary");
 // 1. CREAR ANIMAL
 const createAnimal = async (req, res) => {
   try {
-    const { nombre, descripcion, edad, especie, urgent } = req.body;
+    // 1. Extraemos también 'ubicacion' del cuerpo
+    const { nombre, descripcion, edad, especie, urgent, ubicacion } = req.body;
     const { id: userId, role: userRole } = req.user;
 
-    // Limpieza de edad
     const edadFinal = (edad === "" || edad === undefined) ? null : parseInt(edad);
     
-    // Subida de imagen
     let foto_url = null;
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, { folder: "conexion_animal_fotos" });
       foto_url = result.secure_url;
     }
 
-    // Definimos qué columna y qué subconsulta usar según el rol
     let targetColumn, idSubquery;
 
+    // 🚨 IMPORTANTE: Cambiamos $7 por $8 porque 'ubicacion' ocupará el puesto $7
     if (userRole === 'admin') {
       targetColumn = 'protectora_id';
-      idSubquery = `(SELECT protectora_id FROM protectora_admins WHERE user_id = $7 LIMIT 1)`;
+      idSubquery = `(SELECT protectora_id FROM protectora_admins WHERE user_id = $8 LIMIT 1)`;
     } else if (userRole === 'gestor') {
       targetColumn = 'colonia_id';
-      idSubquery = `(SELECT id FROM colonias WHERE gestor_id = $7 LIMIT 1)`;
+      idSubquery = `(SELECT id FROM colonias WHERE gestor_id = $8 LIMIT 1)`;
     } else if (userRole === 'superadmin') {
       targetColumn = 'protectora_id';
       idSubquery = `(SELECT id FROM protectoras LIMIT 1)`;
     }
 
+    // 2. Añadimos 'ubicacion' a la lista de columnas y valores ($7)
     const query = `
-      INSERT INTO animales (nombre, descripcion, edad, especie, urgent, foto_url, ${targetColumn}, estado) 
-      VALUES ($1, $2, $3, $4, $5, $6, ${idSubquery}, 'activo') 
+      INSERT INTO animales (nombre, descripcion, edad, especie, urgent, foto_url, ubicacion, ${targetColumn}, estado) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, ${idSubquery}, 'activo') 
       RETURNING *`;
 
-    const params = [nombre, descripcion, edadFinal, especie, urgent || false, foto_url, userId];
+    // 3. Añadimos 'ubicacion' al array de params antes del userId
+    const params = [
+      nombre, 
+      descripcion, 
+      edadFinal, 
+      especie, 
+      urgent || false, 
+      foto_url, 
+      ubicacion || null, // $7
+      userId             // $8
+    ];
+
     const result = await pool.query(query, params);
 
     res.status(201).json({ message: "¡Animal registrado!", animal: result.rows[0] });
@@ -103,22 +114,41 @@ const deleteAnimal = async (req, res) => {
     res.status(500).json({ message: "Error al eliminar" });
   }
 };
-
-// NUEVO: Obtener animales para el público (Solo protectoras)
 const getPublicAnimals = async (req, res) => {
+  const { especie, urgent, ubicacion } = req.query; // Cambiamos 'nombre' por 'ubicacion'
+
   try {
-    // Filtramos: que tengan protectora_id (no son de colonia) y estén activos
-    const query = `
-      SELECT * FROM animales 
-      WHERE protectora_id IS NOT NULL 
-      AND estado = 'activo' 
-      ORDER BY created_at DESC`;
-      
-    const result = await pool.query(query);
+    let query = `
+      SELECT a.*, p.direccion as protectora_direccion 
+      FROM animales a
+      LEFT JOIN protectoras p ON a.protectora_id = p.id
+      WHERE a.estado = 'activo'
+    `;
+    let params = [];
+    let count = 1;
+
+    if (especie && especie !== 'Todos') {
+      query += ` AND a.especie ILIKE $${count}`;
+      params.push(especie);
+      count++;
+    }
+
+    if (urgent === 'true') {
+      query += ` AND a.urgent = true`;
+    }
+
+    if (ubicacion && ubicacion.trim() !== "") {
+      query += ` AND a.ubicacion ILIKE $${count}`;
+      params.push(`%${ubicacion.trim()}%`);
+      count++;
+    }
+
+    query += " ORDER BY a.urgent DESC, a.created_at DESC";
+
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ message: "Error al obtener catálogo" });
+    res.status(500).json({ message: "Error al filtrar" });
   }
 };
 const getAnimalById = async (req, res) => {

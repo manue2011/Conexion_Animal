@@ -3,14 +3,15 @@ const pool = require('../config/db');
 // Obtener todas las solicitudes de rol pendientes
 const getPendingRequests = async (req, res) => {
   try {
-    // Hacemos un JOIN para unir la solicitud con el correo del usuario
     const query = `
       SELECT 
         sr.id, 
         sr.rol_solicitado, 
         sr.mensaje, 
         sr.estado, 
-        u.email 
+        u.email,
+        u.telefono,             -- ¡NUEVO! Extraemos el teléfono
+        u.entidad_solicitada    -- ¡NUEVO! Extraemos el nombre de la protectora/colonia
       FROM solicitudes_rol sr
       JOIN users u ON sr.user_id = u.id
       WHERE sr.estado = 'pendiente'
@@ -18,51 +19,125 @@ const getPendingRequests = async (req, res) => {
     `;
     
     const result = await pool.query(query);
-    res.json(result.rows); // Devolvemos el array de solicitudes al frontend
+    res.json(result.rows); 
     
   } catch (err) {
     console.error('Error en getPendingRequests:', err.message);
     res.status(500).json({ message: 'Error al obtener las solicitudes pendientes' });
   }
 };
-// Añade esta función en superAdminController.js
+
+// 3. Procesar la solicitud (El motor principal)
 const procesarSolicitud = async (req, res) => {
-  const { id } = req.params; // El ID de la solicitud
-  const { accion } = req.body; // 'aprobar' o 'rechazar'
+  const { id } = req.params; 
+  // Capturamos lo que nos manda el Modal de React:
+  const { accion, vinculoModo, entidadId, entidadNombre } = req.body; 
 
   try {
-    // 1. Buscamos la solicitud para saber qué rol pidió y quién es
+    await pool.query('BEGIN'); // Iniciamos transacción segura
+
     const solicitudResult = await pool.query('SELECT * FROM solicitudes_rol WHERE id = $1', [id]);
-    
     if (solicitudResult.rows.length === 0) {
+      await pool.query('ROLLBACK');
       return res.status(404).json({ message: 'Solicitud no encontrada' });
     }
 
     const solicitud = solicitudResult.rows[0];
+    const userId = solicitud.user_id;
+    const rol = solicitud.rol_solicitado;
 
+    // --- CASO A: RECHAZAR ---
     if (accion === 'rechazar') {
-      // Solo cambiamos el estado a rechazado
       await pool.query("UPDATE solicitudes_rol SET estado = 'rechazado' WHERE id = $1", [id]);
+      await pool.query('COMMIT');
       return res.json({ message: 'Solicitud rechazada correctamente' });
     }
 
+    // --- CASO B: APROBAR (Aquí ocurre la magia) ---
     if (accion === 'aprobar') {
-      // A. Cambiamos la solicitud a aprobada
+      
+      // 0. Sacamos el teléfono del usuario por si nos hace falta copiarlo
+      const userResult = await pool.query('SELECT telefono FROM users WHERE id = $1', [userId]);
+      const telefonoUsuario = userResult.rows[0]?.telefono || null;
+
+      // 🏢 LÓGICA PARA PROTECTORAS (Rol: admin)
+      if (rol === 'admin') {
+        let idProtectora = entidadId; // Si es 'existente', usamos el ID que viene de React
+
+        if (vinculoModo === 'nueva') {
+          // 1. Creamos la protectora inyectando el nombre Y EL TELÉFONO
+          const nuevaProt = await pool.query(
+            "INSERT INTO protectoras (nombre, telefono) VALUES ($1, $2) RETURNING id",
+            [entidadNombre, telefonoUsuario]
+          );
+          idProtectora = nuevaProt.rows[0].id;
+        }
+
+        // 2. Vinculamos al usuario con la protectora en la tabla puente (N:M)
+        await pool.query(
+          "INSERT INTO protectora_admins (user_id, protectora_id) VALUES ($1, $2)",
+          [userId, idProtectora]
+        );
+      } 
+      
+      // 🐱 LÓGICA PARA COLONIAS (Rol: gestor)
+      else if (rol === 'gestor') {
+        if (vinculoModo === 'nueva') {
+          // En tu BD, el gestor_id va directamente en la tabla de la colonia
+          await pool.query(
+            "INSERT INTO colonias (nombre, gestor_id) VALUES ($1, $2)",
+            [entidadNombre, userId]
+          );
+        } else if (vinculoModo === 'existente') {
+          // Si te vinculan a una existente, te pisa como el nuevo gestor
+          await pool.query(
+            "UPDATE colonias SET gestor_id = $1 WHERE id = $2",
+            [userId, entidadId]
+          );
+        }
+      }
+
+      // 3. Ascendemos al usuario y lo desbloqueamos (verificado = true)
+      await pool.query(
+        "UPDATE users SET role = $1, verificado = true WHERE id = $2", 
+        [rol, userId]
+      );
+
+      // 4. Marcamos la solicitud como aprobada
       await pool.query("UPDATE solicitudes_rol SET estado = 'aprobado' WHERE id = $1", [id]);
       
-      // B. ¡EL ASCENSO! Le cambiamos el rol al usuario en la tabla users
-      await pool.query("UPDATE users SET role = $1 WHERE id = $2", [solicitud.rol_solicitado, solicitud.user_id]);
-      
-      return res.json({ message: `¡Usuario ascendido a ${solicitud.rol_solicitado} con éxito!` });
+      await pool.query('COMMIT'); // Guardamos todo definitivamente
+      return res.json({ message: `¡Usuario ascendido y vinculado con éxito!` });
     }
 
+    await pool.query('ROLLBACK');
     res.status(400).json({ message: 'Acción no válida' });
 
   } catch (err) {
-    console.error('Error al procesar solicitud:', err.message);
-    res.status(500).json({ message: 'Error en el servidor' });
+    await pool.query('ROLLBACK'); // Si algo peta, no se guarda nada a medias
+    console.error('Error al procesar solicitud:', err);
+    res.status(500).json({ message: 'Error en el servidor al procesar la solicitud' });
   }
 };
 
-module.exports = { getPendingRequests, procesarSolicitud };
+// Obtener las listas para los desplegables del SuperAdmin
+const getEntidadesExistentes = async (req, res) => {
+  try {
+    // Sacamos las protectoras
+    const protectoras = await pool.query("SELECT id, nombre FROM protectoras WHERE estado = 'activo' ORDER BY nombre ASC");
+    
+    // Sacamos las colonias
+    const colonias = await pool.query("SELECT id, nombre FROM colonias WHERE estado = 'activo' ORDER BY nombre ASC");
 
+    // Lo enviamos todo junto a React
+    res.json({
+      protectoras: protectoras.rows,
+      colonias: colonias.rows
+    });
+  } catch (err) {
+    console.error('Error al obtener entidades:', err.message);
+    res.status(500).json({ message: 'Error al obtener las listas' });
+  }
+};
+
+module.exports = { getPendingRequests, getEntidadesExistentes, procesarSolicitud };

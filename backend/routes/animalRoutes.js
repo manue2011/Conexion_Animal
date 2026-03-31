@@ -13,6 +13,7 @@ const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
 
 
+
 // --- AQUÍ ES DONDE VAN LAS RUTAS ---
 router.get("/public", getPublicAnimals);
 router.get("/public/:id", getAnimalById);

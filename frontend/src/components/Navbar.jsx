@@ -47,12 +47,23 @@ const Navbar = () => {
                     Panel Admin
                   </Link>
                 )}
-
-                {/* NUEVO: Botón para Usuarios Normales */}
-                {user.role === 'user' && (
-                  <Link to="/solicitar-rol" className="bg-green-100 text-green-800 font-bold px-3 py-2 rounded-lg flex items-center hover:bg-green-200 transition">
-                    🤝 Trabaja con nosotros
+                 {/* Antes decía /colonia-dashboard, cámbialo por /colonia/dashboard */}
+                {user.role === 'gestor' && (
+                  <Link to="/colonia/dashboard" className="bg-blue-100 text-blue-800 font-bold px-3 py-2 rounded-lg flex items-center hover:bg-blue-200 transition">
+                    🐱 Gestión Colonia
                   </Link>
+)}
+
+                {/* Botón para Usuarios Normales - Añadimos Mis Solicitudes */}
+                {user.role === 'user' && (
+                  <div className="flex gap-2">
+                    <Link to="/mis-solicitudes" className="text-gray-600 hover:text-blue-600 font-bold px-3 py-2">
+                      📋 Mis Solicitudes
+                    </Link>
+                    <Link to="/solicitar-rol" className="bg-green-100 text-green-800 font-bold px-3 py-2 rounded-lg flex items-center hover:bg-green-200 transition">
+                      🤝 Trabaja con nosotros
+                    </Link>
+                  </div>
                 )}
 
                 <button 
@@ -78,5 +89,6 @@ const Navbar = () => {
     </nav>
   );
 };
+
 
 export default Navbar;

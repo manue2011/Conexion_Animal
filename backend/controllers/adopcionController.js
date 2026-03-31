@@ -1,12 +1,11 @@
-// Archivo: backend/controllers/adopcionController.js
 const pool = require('../config/db');
 
+// 1. CREAR SOLICITUD (El adoptante envía el formulario)
 const crearSolicitud = async (req, res) => {
- const { animal_id, mensaje, telefono, direccion, tiene_jardin, otros_animales } = req.body;
+  const { animal_id, mensaje, telefono, direccion, tiene_jardin, otros_animales } = req.body;
   const solicitante_id = req.user.id;
 
   try {
-    // 1. Verificar si ya solicitó este animal antes (para no duplicar)
     const existe = await pool.query(
       'SELECT * FROM solicitudes_adopcion WHERE animal_id = $1 AND solicitante_id = $2',
       [animal_id, solicitante_id]
@@ -16,8 +15,7 @@ const crearSolicitud = async (req, res) => {
       return res.status(400).json({ message: 'Ya has enviado una solicitud para este animal.' });
     }
 
-    // 2. Crear la solicitud
-  await pool.query(
+    await pool.query(
       `INSERT INTO solicitudes_adopcion 
        (animal_id, solicitante_id, mensaje, telefono, direccion, tiene_jardin, otros_animales) 
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
@@ -31,11 +29,14 @@ const crearSolicitud = async (req, res) => {
   }
 };
 
-// 2. LEER TODAS LAS SOLICITUDES (Para el Admin)
+// 2. LEER SOLICITUDES FILTRADAS (¡Aquí aplicamos la privacidad!)
 const getSolicitudes = async (req, res) => {
+  const userId = req.user.id;
+  const userRole = req.user.role;
+
   try {
-    // AÑADIDO: s.telefono, s.direccion, s.tiene_jardin, s.otros_animales
-    const response = await pool.query(`
+    // Base de la consulta
+    let query = `
       SELECT s.id, s.mensaje, s.estado, s.created_at, 
              s.telefono, s.direccion, s.tiene_jardin, s.otros_animales,
              u.email as solicitante_email,
@@ -43,55 +44,67 @@ const getSolicitudes = async (req, res) => {
       FROM solicitudes_adopcion s
       JOIN users u ON s.solicitante_id = u.id
       JOIN animales a ON s.animal_id = a.id
-      ORDER BY s.created_at DESC
-    `);
+    `;
+    let params = [];
+
+    // --- FILTRADO POR PRIVACIDAD ---
+    if (userRole === 'admin') {
+      // Si es Admin de Protectora: Solo ve animales de SU protectora
+      query += ` 
+        JOIN protectora_admins pa ON a.protectora_id = pa.protectora_id
+        WHERE pa.user_id = $1
+      `;
+      params = [userId];
+    } 
+    else if (userRole === 'gestor') {
+      // Si es Gestor de Colonia: Solo ve animales de SU colonia
+      query += ` 
+        JOIN colonias c ON a.colonia_id = c.id
+        WHERE c.gestor_id = $1
+      `;
+      params = [userId];
+    } 
+    else if (userRole === 'superadmin') {
+      // El SuperAdmin no tiene WHERE, lo ve todo
+    } 
+    else {
+      // Si no es ninguno, no debería ver nada
+      return res.status(403).json({ message: 'No tienes permiso para ver solicitudes' });
+    }
+
+    query += " ORDER BY s.created_at DESC";
     
+    const response = await pool.query(query, params);
     res.json(response.rows);
+
   } catch (error) {
-    console.error(error);
+    console.error("Error en getSolicitudes:", error);
     res.status(500).json({ message: 'Error al obtener solicitudes' });
   }
 };
 
 // 3. RESPONDER SOLICITUD (Aprobar/Rechazar)
-// Archivo: backend/controllers/adopcionController.js
-
-// ... (tus imports y otras funciones)
-
 const updateSolicitud = async (req, res) => {
   const { id } = req.params;
   const { estado } = req.body; 
 
-  console.log(`➡️ INTENTO DE ACTUALIZAR SOLICITUD ${id} A ESTADO: ${estado}`); // <--- DIAGNÓSTICO 1
-
   try {
-    // 1. Actualizar la solicitud
     const result = await pool.query(
       'UPDATE solicitudes_adopcion SET estado = $1 WHERE id = $2 RETURNING *',
       [estado, id]
     );
     
     if (result.rows.length === 0) {
-      console.log("❌ Error: No se encontró la solicitud en la BD"); // <--- DIAGNÓSTICO 2
       return res.status(404).json({ message: 'Solicitud no encontrada' });
     }
 
     const solicitudActualizada = result.rows[0];
-    console.log("✅ Solicitud actualizada. Datos:", solicitudActualizada); // <--- DIAGNÓSTICO 3
 
-    // 2. LÓGICA DE NEGOCIO
-    // ATENCIÓN MANUEL: Fíjate si la terminal imprime "ENTRANDO A ACTUALIZAR ANIMAL..."
     if (estado === 'aprobada') {
-      console.log(`🔄 ENTRANDO A ACTUALIZAR ANIMAL ID: ${solicitudActualizada.animal_id}`); // <--- DIAGNÓSTICO 4
-      
-      const animalResult = await pool.query(
-        "UPDATE animales SET estado = 'adoptado' WHERE id = $1 RETURNING *",
+      await pool.query(
+        "UPDATE animales SET estado = 'adoptado' WHERE id = $1",
         [solicitudActualizada.animal_id]
       );
-      
-      console.log("Resultado actualización animal:", animalResult.rows[0]); // <--- DIAGNÓSTICO 5
-    } else {
-      console.log("ℹ️ No se actualiza animal porque el estado no es 'aprobada'");
     }
 
     res.json({ 
@@ -100,10 +113,25 @@ const updateSolicitud = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ ERROR CRÍTICO:", error);
+    console.error("Error al actualizar solicitud:", error);
     res.status(500).json({ message: 'Error al actualizar solicitud' });
   }
 };
+const getMisSolicitudes = async (req, res) => {
+  try {
+    const solicitante_id = req.user.id;
+    const result = await pool.query(
+      `SELECT s.*, a.nombre as animal_nombre 
+       FROM solicitudes_adopcion s 
+       JOIN animales a ON s.animal_id = a.id 
+       WHERE s.solicitante_id = $1 
+       ORDER BY s.created_at DESC`, 
+      [solicitante_id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ message: "Error al obtener tus solicitudes" });
+  }
+};
 
-module.exports = { crearSolicitud, getSolicitudes, updateSolicitud };
-//exportar las nuevas funciones!
+module.exports = { crearSolicitud, getSolicitudes, updateSolicitud, getMisSolicitudes };

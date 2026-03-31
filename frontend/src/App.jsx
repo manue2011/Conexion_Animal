@@ -11,7 +11,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import SolicitarRolPage from './pages/user/SolicitarRolPage';
 import AnimalDetailsPage from './pages/AnimalDetailsPage';
-
+import MisSolicitudesPage from './pages/user/MisSolicitudesPage.jsx';
 // Páginas Privadas
 import AdminDashboard from './pages/admin/AdminDashboard';
 import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
@@ -36,6 +36,7 @@ function App() {
         ============================== */}
         <Route element={<ProtectedRoute allowedRoles={['user']} />}>
           <Route path="/solicitar-rol" element={<SolicitarRolPage />} />
+          <Route path="/mis-solicitudes" element={<MisSolicitudesPage />} />
         </Route>
 
         {/* ==============================
