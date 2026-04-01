@@ -7,11 +7,12 @@ const {
   getMiColonia, 
   updateColonia,
   getMiProtectora,
-  updateProtectora 
+  updateProtectora ,
+  getPublicColonias
 } = require('../controllers/userController');
 
 const { verifyToken } = require('../middleware/authMiddleware');
-
+router.get('/public', getPublicColonias);
 // RUTAS DE COLONIAS
 router.get('/mi-colonia', verifyToken, getMiColonia);
 router.put('/colonia/:id', verifyToken, updateColonia);

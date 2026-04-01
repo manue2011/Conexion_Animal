@@ -25,6 +25,9 @@ app.use('/api/animales', animalRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/adopciones', adopcionRoutes);
 
+const necesidadesRoutes = require('./routes/necesidadesRoutes');
+app.use('/api/necesidades', necesidadesRoutes);
+
 // 3. RUTA DE PRUEBA (Health Check)
 app.get('/health', async (req, res) => {
   try {

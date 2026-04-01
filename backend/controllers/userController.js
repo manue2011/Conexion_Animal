@@ -59,7 +59,8 @@ const getMiColonia = async (req, res) => {
 // 3. ACTUALIZAR DATOS DE COLONIA (¡NUEVA! Para completar latitud/longitud)
 const updateColonia = async (req, res) => {
   const { id } = req.params;
-  const { descripcion, direccion } = req.body; // <-- Solo estos dos
+  // 👇 1. Extraemos también el codigo_postal del frontend
+  const { descripcion, direccion, codigo_postal } = req.body; 
   const userId = req.user.id;
 
   try {
@@ -69,16 +70,18 @@ const updateColonia = async (req, res) => {
       return res.status(403).json({ message: "No tienes permiso" });
     }
 
+    // 👇 2. Actualizamos la consulta SQL (codigo_postal es $3, y el id pasa a ser $4)
     await pool.query(
-      "UPDATE colonias SET descripcion = $1, direccion = $2 WHERE id = $3",
-      [descripcion, direccion, id]
+      "UPDATE colonias SET descripcion = $1, direccion = $2, codigo_postal = $3 WHERE id = $4",
+      [descripcion, direccion, codigo_postal, id]
     );
 
     res.json({ message: "Perfil de colonia actualizado" });
   } catch (err) {
     res.status(500).json({ message: "Error al actualizar" });
   }
-};// OBTENER MI PROTECTORA
+};
+// OBTENER MI PROTECTORA
 const getMiProtectora = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -121,6 +124,19 @@ const updateProtectora = async (req, res) => {
   }
 };
 
+// OBTENER TODAS LAS COLONIAS PÚBLICAS (Para la web)
+const getPublicColonias = async (req, res) => {
+  try {
+    // Solo mostramos las colonias activas
+    const result = await pool.query(
+      "SELECT id, nombre, descripcion, direccion, codigo_postal FROM colonias WHERE estado = 'activo'"
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error al obtener colonias públicas:", err.message);
+    res.status(500).json({ message: "Error al cargar las colonias" });
+  }
+};
 
 
 module.exports = { 
@@ -128,5 +144,6 @@ module.exports = {
   getMiColonia, 
   updateColonia, 
   getMiProtectora, 
-  updateProtectora 
+  updateProtectora,
+  getPublicColonias 
 };

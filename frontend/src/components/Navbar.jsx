@@ -31,7 +31,12 @@ const Navbar = () => {
             <Link to="/" className="text-gray-600 hover:text-blue-500 px-3 py-2 font-medium">
               Inicio
             </Link>
-
+            <Link 
+              to="/colonias" 
+              className="flex items-center gap-1 text-gray-600 hover:text-blue-600 font-bold px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              🗺️ Red de Colonias
+            </Link>
             {isLoggedIn ? (
               <>
                 {/* Botón exclusivo para Manuel (SuperAdmin) */}
@@ -52,8 +57,8 @@ const Navbar = () => {
                   <Link to="/colonia/dashboard" className="bg-blue-100 text-blue-800 font-bold px-3 py-2 rounded-lg flex items-center hover:bg-blue-200 transition">
                     🐱 Gestión Colonia
                   </Link>
-)}
-
+                )}
+  
                 {/* Botón para Usuarios Normales - Añadimos Mis Solicitudes */}
                 {user.role === 'user' && (
                   <div className="flex gap-2">

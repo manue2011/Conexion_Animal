@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Páginas
+import ColoniasPublic from './pages/ColoniasPublic';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -59,7 +60,7 @@ function App() {
         <Route element={<ProtectedRoute allowedRoles={['gestor']} />}>
           <Route path="/colonia/dashboard" element={<ColoniaDashboard />} />
         </Route>
-
+        <Route path="/colonias" element={<ColoniasPublic />} />
       </Routes>
     </BrowserRouter>
   );

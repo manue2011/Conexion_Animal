@@ -95,10 +95,13 @@ const updateAnimal = async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, descripcion, edad, especie, urgent, estado } = req.body;
+    
     const query = `UPDATE animales SET nombre = $1, descripcion = $2, edad = $3, especie = $4, urgent = $5, estado = $6 WHERE id = $7 RETURNING *`;
     const result = await pool.query(query, [nombre, descripcion, edad, especie, urgent, estado, id]);
     
     if (result.rows.length === 0) return res.status(404).json({ message: "Animal no encontrado" });
+    
+    // 🚨 HE BORRADO LO DE LAS COLONIAS DE AQUÍ
     res.json({ message: "Animal actualizado", animal: result.rows[0] });
   } catch (err) {
     res.status(500).json({ message: "Error al actualizar" });

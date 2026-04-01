@@ -20,6 +20,40 @@ const ColoniaDashboard = () => {
   const [file, setFile] = useState(null);
   const [formError, setFormError] = useState('');
 
+  // --- ESTADOS PARA PETICIONES DE AYUDA (NECESIDADES) ---
+  const [isNeedModalOpen, setIsNeedModalOpen] = useState(false);
+  const [isSubmittingNeed, setIsSubmittingNeed] = useState(false);
+  const [needForm, setNeedForm] = useState({
+    titulo: '',
+    categoria: 'comida', // Por defecto
+    descripcion: '',
+    prioridad: 'normal' // Si cambia a 'urgente', ¡dispara el email!
+  });
+  // --- LÓGICA DE PETICIONES DE AYUDA ---
+  const handleSubmitNeed = async (e) => {
+    e.preventDefault();
+    if (isSubmittingNeed) return;
+    setIsSubmittingNeed(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      // Enviamos los datos + el ID de esta colonia
+      await axios.post('http://localhost:3000/api/necesidades', {
+        ...needForm,
+        colonia_id: coloniaInfo.id 
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      alert(needForm.prioridad === 'urgente' ? '¡Alerta enviada a los voluntarios!' : 'Petición publicada correctamente.');
+      setIsNeedModalOpen(false);
+      setNeedForm({ titulo: '', categoria: 'comida', descripcion: '', prioridad: 'normal' });
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al publicar la petición.');
+    } finally {
+      setIsSubmittingNeed(false);
+    }
+  };
   // 1. Cargar datos (Colonia + Animales)
   const fetchData = async () => {
     try {
@@ -31,7 +65,8 @@ const ColoniaDashboard = () => {
       setColoniaInfo(resColonia.data);
       setPerfilForm({
         descripcion: resColonia.data.descripcion || '',
-        direccion: resColonia.data.direccion || ''
+        direccion: resColonia.data.direccion || '',
+        codigo_postal: resColonia.data.codigo_postal || ''
       });
 
       // B. Traemos los animales
@@ -143,6 +178,14 @@ const ColoniaDashboard = () => {
           >
             ⚙️ Configurar Colonia
           </button>
+          {/* 👇 NUEVO BOTÓN DE ALERTA 👇 */}
+          <button 
+            disabled={!coloniaInfo?.direccion}
+            onClick={() => setIsNeedModalOpen(true)}
+            className={`w-full text-left px-4 py-3 rounded-lg font-bold mt-8 transition shadow-md flex justify-between items-center ${!coloniaInfo?.direccion ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 text-white'}`}
+          >
+            <span>🚨 Pedir Ayuda</span>
+          </button>
         </nav>
       </aside>
 
@@ -150,7 +193,7 @@ const ColoniaDashboard = () => {
       <main className="flex-1 p-8 overflow-y-auto">
         
         {/* 🚨 AVISO DE PERFIL INCOMPLETO */}
-        {coloniaInfo && (!coloniaInfo.direccion || !coloniaInfo.descripcion) && (
+        {coloniaInfo && (!coloniaInfo.direccion || !coloniaInfo.descripcion || !coloniaInfo.codigo_postal) && (
           <div className="bg-orange-100 border-l-4 border-orange-500 p-4 mb-8 flex justify-between items-center rounded-r-lg shadow-md animate-bounce-short">
             <div className="flex items-center">
               <span className="text-2xl mr-3">⚠️</span>
@@ -237,6 +280,18 @@ const ColoniaDashboard = () => {
                 />
               </div>
               <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Código Postal (Para el Mapa Público)</label>
+                <input 
+                  type="text" 
+                  required 
+                  maxLength="5"
+                  value={perfilForm.codigo_postal || ''}
+                  onChange={(e) => setPerfilForm({...perfilForm, codigo_postal: e.target.value})}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ej: 28001"
+                />
+              </div>
+              <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Descripción de la Colonia</label>
                 <textarea 
                   required
@@ -312,7 +367,78 @@ const ColoniaDashboard = () => {
             </form>
           </div>
         </div>
+      )
+      }{/* --- MODAL DE PEDIR AYUDA (NECESIDADES) --- */}
+      {isNeedModalOpen && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[70] backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg border-t-8 border-red-500">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">🚨 Publicar Petición de Ayuda</h2>
+            <p className="text-sm text-gray-500 mb-6">Informa a la comunidad de lo que necesita tu colonia.</p>
+            
+            <form onSubmit={handleSubmitNeed} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Título corto</label>
+                <input 
+                  type="text" required maxLength="50"
+                  value={needForm.titulo}
+                  onChange={(e) => setNeedForm({...needForm, titulo: e.target.value})}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="Ej: Necesitamos pienso para cachorros"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Categoría</label>
+                <select 
+                  value={needForm.categoria}
+                  onChange={(e) => setNeedForm({...needForm, categoria: e.target.value})}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-red-500 bg-white"
+                >
+                  <option value="comida">🥫 Comida / Pienso</option>
+                  <option value="medicina">💊 Medicina / Veterinaria</option>
+                  <option value="transporte">🚐 Transporte / Ayuda logística</option>
+                  <option value="urgencia">🆘 Urgencia / Rescate extremo</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Detalles de la situación</label>
+                <textarea 
+                  required
+                  value={needForm.descripcion}
+                  onChange={(e) => setNeedForm({...needForm, descripcion: e.target.value})}
+                  className="w-full border border-gray-300 p-2.5 rounded-lg h-24 outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="Explica qué está pasando y cómo pueden ayudar..."
+                ></textarea>
+              </div>
+
+              <div className="flex items-center bg-red-50 p-4 rounded-xl border border-red-100">
+                <input 
+                  type="checkbox" 
+                  id="urgente"
+                  checked={needForm.prioridad === 'urgente'} 
+                  onChange={(e) => setNeedForm({...needForm, prioridad: e.target.checked ? 'urgente' : 'normal'})} 
+                  className="h-5 w-5 text-red-600 rounded cursor-pointer"
+                />
+                <label htmlFor="urgente" className="ml-3 block text-sm font-bold text-red-800 cursor-pointer">
+                  ⚠️ Marcar como EMERGENCIA EXTREMA
+                  <span className="block text-xs font-normal text-red-600 mt-0.5">Se enviará una alerta a los correos de los voluntarios.</span>
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button type="button" onClick={() => setIsNeedModalOpen(false)} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded-lg transition">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={isSubmittingNeed} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition">
+                  {isSubmittingNeed ? 'Publicando...' : 'Publicar Alerta'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
+
     </div>
   );
 };
