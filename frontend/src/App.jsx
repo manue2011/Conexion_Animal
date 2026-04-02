@@ -6,6 +6,8 @@ import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Páginas
+import TablonPage from './pages/TablonPage'; 
+import ModeracionTablonPage from './pages/admin/ModeracionTablonPage';
 import ColoniasPublic from './pages/ColoniasPublic';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -31,6 +33,7 @@ function App() {
         <Route path="/animal/:id" element={<AnimalDetailsPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/tablon" element={<TablonPage />} />
 
         {/* ==============================
             RUTAS DE USUARIO NORMAL
@@ -52,6 +55,8 @@ function App() {
         ============================== */}
         <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
           <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
+           {/* NUEVO: Ruta de moderación */}
+          <Route path="/superadmin/moderacion-tablon" element={<ModeracionTablonPage />} />
         </Route>
 
         {/* ==============================

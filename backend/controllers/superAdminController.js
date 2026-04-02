@@ -139,5 +139,114 @@ const getEntidadesExistentes = async (req, res) => {
     res.status(500).json({ message: 'Error al obtener las listas' });
   }
 };
+const obtenerMetricasGlobales = async (req, res) => {
+  try {
+    // Usamos ::INT para convertir el conteo de String a Entero directamente en la BD
+    const query = `
+      SELECT 
+        (SELECT COUNT(*)::INT FROM users) as usuarios_totales,
+        (SELECT COUNT(*)::INT FROM protectoras WHERE estado = 'activo') as protectoras_activas,
+        (SELECT COUNT(*)::INT FROM users WHERE role = 'user') as usuarios_normales,
+        (SELECT COUNT(*)::INT FROM colonias WHERE estado = 'activo') as colonias_activas
+    `;
+    
+    const result = await pool.query(query);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("❌ Error en obtenerMetricasGlobales:", error.message);
+    res.status(500).json({ error: "Error al obtener las métricas globales" });
+  }
+};
 
-module.exports = { getPendingRequests, getEntidadesExistentes, procesarSolicitud };
+const obtenerListadoEntidades = async (req, res) => {
+  try {
+    // 1. Traemos protectoras con el conteo de sus admins
+    const protectoras = await pool.query(`
+      SELECT p.*, COUNT(pa.user_id)::INT as total_admins 
+      FROM protectoras p 
+      LEFT JOIN protectora_admins pa ON p.id = pa.protectora_id 
+      GROUP BY p.id ORDER BY p.created_at DESC
+    `);
+
+    // 2. Traemos colonias con el email de su gestor
+    const colonias = await pool.query(`
+      SELECT c.*, u.email as gestor_email 
+      FROM colonias c 
+      JOIN users u ON c.gestor_id = u.id 
+      ORDER BY c.created_at DESC
+    `);
+
+    res.json({
+      protectoras: protectoras.rows,
+      colonias: colonias.rows
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener el listado maestro" });
+  }
+};
+const actualizarEntidad = async (req, res) => {
+  const { tipo, id } = req.params; // tipo: 'protectoras' o 'colonias'
+  const { nombre, direccion, descripcion, estado, codigo_postal } = req.body;
+
+  try {
+    let query;
+    let params;
+
+    if (tipo === 'protectoras') {
+      query = `UPDATE protectoras SET nombre = $1, direccion = $2, descripcion = $3, estado = $4 WHERE id = $5 RETURNING *`;
+      params = [nombre, direccion, descripcion, estado, id];
+    } else {
+      query = `UPDATE colonias SET nombre = $1, direccion = $2, descripcion = $3, estado = $4, codigo_postal = $5 WHERE id = $6 RETURNING *`;
+      params = [nombre, direccion, descripcion, estado, codigo_postal, id];
+    }
+
+    const result = await pool.query(query, params);
+    res.json({ message: "Entidad actualizada", data: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: "Error al actualizar la entidad" });
+  }
+};
+
+// Obtener lista de todos los SuperAdmins actuales
+const obtenerStaff = async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, email, created_at FROM users WHERE role = 'superadmin' ORDER BY created_at DESC"
+    );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener el staff" });
+  }
+};
+const asignarSuperAdmin = async (req, res) => {
+  // .trim() elimina espacios accidentales al principio o final
+  const email = req.body.email ? req.body.email.trim() : null;
+
+  if (!email) {
+    return res.status(400).json({ message: "El email es obligatorio" });
+  }
+
+  try {
+    // Usamos ILIKE para que no importe si escribes Mayúsculas o Minúsculas
+    const result = await pool.query(
+      "UPDATE users SET role = 'superadmin', verificado = true WHERE email ILIKE $1 RETURNING id, email, role",
+      [email]
+    );
+
+    // Si rowCount es 0, es que ese email NO existe en la tabla 'users'
+    if (result.rowCount === 0) {
+      return res.status(400).json({ 
+        message: `No se encontró ningún usuario con el email: ${email}. Asegúrate de que se haya registrado primero.` 
+      });
+    }
+
+    res.json({ message: "Nuevo SuperAdmin asignado", user: result.rows[0] });
+  } catch (error) {
+    console.error("Error en asignarSuperAdmin:", error.message);
+    res.status(500).json({ error: "Error al procesar la solicitud en la base de datos" });
+  }
+};
+
+
+
+module.exports = { getPendingRequests, getEntidadesExistentes, procesarSolicitud, obtenerMetricasGlobales, obtenerListadoEntidades, actualizarEntidad, obtenerStaff, asignarSuperAdmin };

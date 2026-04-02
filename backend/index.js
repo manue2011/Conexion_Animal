@@ -10,7 +10,7 @@ const userRoutes = require('./routes/userRoutes');
 const animalRoutes = require('./routes/animalRoutes');
 const authRoutes = require('./routes/authRoutes');
 const adopcionRoutes = require('./routes/adopcionRoutes');
-
+const postsRoutes = require('./routes/postsRoutes');
 
 const app = express();
 
@@ -19,6 +19,7 @@ app.use(cors());
 app.use(express.json()); // Ahora el servidor ya entiende JSON para todas las rutas de abajo
 
 // 2. RUTAS DE LA API
+app.use('/api/posts', postsRoutes);
 app.use('/api/usuarios', userRoutes);
 app.use('/api/superadmin', superAdminRoutes);
 app.use('/api/animales', animalRoutes);

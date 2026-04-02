@@ -37,6 +37,14 @@ const Navbar = () => {
             >
               🗺️ Red de Colonias
             </Link>
+            
+            {/* NUEVO: Enlace al Tablón Público */}
+            <Link 
+              to="/tablon" 
+              className="flex items-center gap-1 text-gray-600 hover:text-orange-600 font-bold px-4 py-2 rounded-lg hover:bg-orange-50 transition-colors"
+            >
+              📢 Tablón de Ayuda
+            </Link>
             {isLoggedIn ? (
               <>
                 {/* Botón exclusivo para Manuel (SuperAdmin) */}
