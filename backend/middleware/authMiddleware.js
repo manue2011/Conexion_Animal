@@ -57,5 +57,5 @@ const verifyGestor = (req, res, next) => {
 };
 
 // No olvides añadirla al module.exports al final del archivo:
-module.exports = { verifyToken, verifyAdmin, verifySuperAdmin, verifyGestor };
+module.exports = { verifyToken, verifyAdmin, verifySuperAdmin, verifyGestor, isGestor };
 
