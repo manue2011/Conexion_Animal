@@ -1,6 +1,6 @@
 // Archivo: frontend/src/App.jsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-
+import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 // Componentes
 import Navbar from './components/Navbar'; 
 import ProtectedRoute from './components/ProtectedRoute';
@@ -22,6 +22,7 @@ import ColoniaDashboard from './pages/admin/ColoniaDashboard';
 
 function App() {
   return (
+    <GoogleReCaptchaProvider reCaptchaKey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}>
     <BrowserRouter>
       <Navbar />
 
@@ -68,6 +69,7 @@ function App() {
         <Route path="/colonias" element={<ColoniasPublic />} />
       </Routes>
     </BrowserRouter>
+     </GoogleReCaptchaProvider>
   );
 }
 
