@@ -4,23 +4,39 @@ const express = require('express');
 const cors = require('cors');
 const db = require('./config/db'); // Importamos la conexión
 const coloniaRoutes = require('./routes/coloniaRoutes');
+
+
+// Importamos las rutas
+const superAdminRoutes = require('./routes/superAdminRoutes');
+const userRoutes = require('./routes/userRoutes');
+const animalRoutes = require('./routes/animalRoutes');
+const authRoutes = require('./routes/authRoutes');
+const adopcionRoutes = require('./routes/adopcionRoutes');
+const postsRoutes = require('./routes/postsRoutes');
+
 const app = express();
 
-// Middlewares básicos
+// 1. MIDDLEWARES GLOBALES (¡Siempre van primero!)
 app.use(cors());
 app.use(express.json()); // Para que el servidor entienda JSON
 app.use('/api/colonias', coloniaRoutes);
 const animalRoutes = require('./routes/animalRoutes');
+app.use(express.json()); // Ahora el servidor ya entiende JSON para todas las rutas de abajo
+
+// 2. RUTAS DE LA API
+app.use('/api/posts', postsRoutes);
+app.use('/api/usuarios', userRoutes);
+app.use('/api/superadmin', superAdminRoutes);
 app.use('/api/animales', animalRoutes);
-const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
-const adopcionRoutes = require('./routes/adopcionRoutes');
 app.use('/api/adopciones', adopcionRoutes);
 
-// Ruta de prueba (Health Check)
+const necesidadesRoutes = require('./routes/necesidadesRoutes');
+app.use('/api/necesidades', necesidadesRoutes);
+
+// 3. RUTA DE PRUEBA (Health Check)
 app.get('/health', async (req, res) => {
   try {
-    // Hacemos una consulta simple para ver si la BD responde
     const result = await db.query('SELECT NOW()');
     res.json({ 
       status: 'OK', 
@@ -36,5 +52,5 @@ app.get('/health', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(` Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 });

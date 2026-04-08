@@ -28,17 +28,17 @@ const AnimalDetailsPage = () => {
   const isLoggedIn = !!token;
 
   // 1. CARGAR DATOS DEL ANIMAL
-  useEffect(() => {
+ useEffect(() => {
     const fetchAnimal = async () => {
       try {
-        // Obtenemos todos y filtramos (MVP)
-        const response = await axios.get('http://localhost:3000/api/animales');
-        const encontrado = response.data.find(a => a.id === id);
+        // Pedimos el animal específico al backend
+        const response = await axios.get(`http://localhost:3000/api/animales/public/${id}`);
         
-        setAnimal(encontrado);
+        // Como el backend devuelve el objeto directo, lo guardamos tal cual
+        setAnimal(response.data); 
         setLoading(false);
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Error al cargar el animal:", error);
         setLoading(false);
       }
     };
