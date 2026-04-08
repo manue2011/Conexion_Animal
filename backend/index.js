@@ -3,13 +3,13 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db'); // Importamos la conexión
-
+const coloniaRoutes = require('./routes/coloniaRoutes');
 const app = express();
 
 // Middlewares básicos
 app.use(cors());
 app.use(express.json()); // Para que el servidor entienda JSON
-
+app.use('/api/colonias', coloniaRoutes);
 const animalRoutes = require('./routes/animalRoutes');
 app.use('/api/animales', animalRoutes);
 const authRoutes = require('./routes/authRoutes');

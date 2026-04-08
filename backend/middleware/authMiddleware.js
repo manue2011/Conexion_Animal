@@ -33,5 +33,13 @@ const verifyAdmin = (req, res, next) => {
     res.status(403).json({ message: 'Acceso prohibido. Se requieren permisos de Administrador.' });
   }
 };
+// Middleware para comprobar si es Gestor (o un rol superior como superadmin)
+const isGestor = (req, res, next) => {
+  if (req.user && (req.user.role === 'gestor' || req.user.role === 'superadmin')) {
+    next(); // ¡Adelante, puedes pasar!
+  } else {
+    return res.status(403).json({ message: "Acceso denegado. Se requiere rol de Gestor." });
+  }
+};
 
-module.exports = { verifyToken, verifyAdmin };
+module.exports = { verifyToken, verifyAdmin, isGestor };
