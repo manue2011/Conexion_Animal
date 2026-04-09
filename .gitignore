@@ -5,6 +5,8 @@ build/
 
 # Entorno y Secretos (¡Súper Importante!)
 .env
+._*
+.DS_Store
 .env.local
 .DS_Store
 
