@@ -37,7 +37,13 @@ const Navbar = () => {
             >
               🗺️ Red de Colonias
             </Link>
-            
+
+            <Link to="/contacto" className="text-gray-700 hover:text-blue-600 font-medium px-3 py-2">
+            ✉️ Contacto
+            </Link>
+              <Link to="/sobre-nosotros" className="text-gray-700 hover:text-blue-600 px-3 py-2 font-medium">
+              🤝 Conócenos
+            </Link>        
             {/* NUEVO: Enlace al Tablón Público */}
             <Link 
               to="/tablon" 
