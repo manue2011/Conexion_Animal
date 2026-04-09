@@ -4,6 +4,8 @@ import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 // Componentes
 import Navbar from './components/Navbar'; 
 import ProtectedRoute from './components/ProtectedRoute';
+import CookieBanner from './components/CookieBanner';
+import Footer from './components/Footer';
 
 // Páginas
 import TablonPage from './pages/TablonPage'; 
@@ -15,6 +17,10 @@ import RegisterPage from './pages/RegisterPage';
 import SolicitarRolPage from './pages/user/SolicitarRolPage';
 import AnimalDetailsPage from './pages/AnimalDetailsPage';
 import MisSolicitudesPage from './pages/user/MisSolicitudesPage.jsx';
+import PoliticaPrivacidad from './pages/PoliticaPrivacidad';
+import TerminosCondiciones from './pages/TerminosCondiciones';
+import ContactoPage from './pages/ContactoPage';
+import SobreNosotros from './pages/SobreNosotros';
 // Páginas Privadas
 import AdminDashboard from './pages/admin/AdminDashboard';
 import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
@@ -25,7 +31,7 @@ function App() {
     <GoogleReCaptchaProvider reCaptchaKey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}>
     <BrowserRouter>
       <Navbar />
-
+      <main className="min-h-screen">
       <Routes>
         {/* ==============================
             RUTAS PÚBLICAS
@@ -35,7 +41,11 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/tablon" element={<TablonPage />} />
-
+        <Route path="/privacidad" element={<PoliticaPrivacidad />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/terminos" element={<TerminosCondiciones />} />
+        <Route path="/contacto" element={<ContactoPage />} />
+        <Route path="/sobre-nosotros" element={<SobreNosotros />} />
         {/* ==============================
             RUTAS DE USUARIO NORMAL
         ============================== */}
@@ -68,6 +78,9 @@ function App() {
         </Route>
         <Route path="/colonias" element={<ColoniasPublic />} />
       </Routes>
+      </main>
+      <Footer />
+      <CookieBanner />
     </BrowserRouter>
      </GoogleReCaptchaProvider>
   );
