@@ -3,33 +3,56 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db'); // Importamos la conexión
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
-// Importamos las rutas
+// 1. IMPORTACIÓN DE RUTAS (Todas agrupadas)
+const coloniaRoutes = require('./routes/coloniaRoutes');
 const superAdminRoutes = require('./routes/superAdminRoutes');
 const userRoutes = require('./routes/userRoutes');
 const animalRoutes = require('./routes/animalRoutes');
 const authRoutes = require('./routes/authRoutes');
 const adopcionRoutes = require('./routes/adopcionRoutes');
 const postsRoutes = require('./routes/postsRoutes');
+const necesidadesRoutes = require('./routes/necesidadesRoutes');
 
 const app = express();
+app.use(helmet());
+// 2. MIDDLEWARES GLOBALES (¡Siempre van primero!)
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
+}));
 
-// 1. MIDDLEWARES GLOBALES (¡Siempre van primero!)
-app.use(cors());
-app.use(express.json()); // Ahora el servidor ya entiende JSON para todas las rutas de abajo
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Demasiadas peticiones, intenta de nuevo más tarde.' }
+});
 
-// 2. RUTAS DE LA API
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Demasiados intentos de acceso, espera 15 minutos.' }
+});
+
+app.use('/api/', generalLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+
+app.use(express.json()); // Para que el servidor entienda JSON
+
+// 3. USO DE LAS RUTAS DE LA API (Todas agrupadas)
+app.use('/api/colonias', coloniaRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/usuarios', userRoutes);
 app.use('/api/superadmin', superAdminRoutes);
 app.use('/api/animales', animalRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/adopciones', adopcionRoutes);
-
-const necesidadesRoutes = require('./routes/necesidadesRoutes');
 app.use('/api/necesidades', necesidadesRoutes);
 
-// 3. RUTA DE PRUEBA (Health Check)
+// 4. RUTA DE PRUEBA (Health Check)
 app.get('/health', async (req, res) => {
   try {
     const result = await db.query('SELECT NOW()');

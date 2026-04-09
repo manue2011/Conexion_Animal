@@ -28,6 +28,15 @@ const verifyAdmin = (req, res, next) => {
     res.status(403).json({ message: 'Acceso prohibido. Se requieren permisos de Administrador.' });
   }
 };
+// Middleware para comprobar si es Gestor (o un rol superior como superadmin)
+const isGestor = (req, res, next) => {
+  if (req.user && (req.user.role === 'gestor' || req.user.role === 'superadmin')) {
+    next(); // ¡Adelante, puedes pasar!
+  } else {
+    return res.status(403).json({ message: "Acceso denegado. Se requiere rol de Gestor." });
+  }
+};
+
 
 // 3. NUEVO: Verificar si es SuperAdmin (Manuel)
 const verifySuperAdmin = (req, res, next) => {
@@ -48,4 +57,5 @@ const verifyGestor = (req, res, next) => {
 };
 
 // No olvides añadirla al module.exports al final del archivo:
-module.exports = { verifyToken, verifyAdmin, verifySuperAdmin, verifyGestor };
+module.exports = { verifyToken, verifyAdmin, verifySuperAdmin, verifyGestor, isGestor };
+

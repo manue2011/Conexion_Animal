@@ -2,8 +2,10 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 
 const RegisterPage = () => {
+  const { executeRecaptcha } = useGoogleReCaptcha();
   const navigate = useNavigate(); // Para redirigir al usuario
 
   // Estado para guardar los datos del formulario
@@ -24,28 +26,40 @@ const RegisterPage = () => {
   };
 
   // Función que se ejecuta al enviar el formulario
-  const handleSubmit = async (e) => {
-    e.preventDefault(); // Evita que la página se recargue
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      // Hacemos la petición al Backend
-      const response = await axios.post('http://localhost:3000/api/auth/register', formData);
-      
-      setMessage({ type: 'success', text: '¡Registro exitoso! Redirigiendo...' });
-      
-      // Esperamos 2 segundos y lo mandamos al Login
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+  // 1. Verificamos que el hook esté listo
+  if (!executeRecaptcha) {
+    setMessage({ type: 'error', text: 'El sistema de seguridad no ha cargado. Reintenta.' });
+    return;
+  }
 
-    } catch (error) {
-      // Si el backend devuelve error (ej: usuario ya existe)
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.message || 'Error al registrarse' 
-      });
+  try {
+    // 2. ¡Mucho más simple! Sin promesas manuales ni window.grecaptcha
+    const recaptchaToken = await executeRecaptcha('register');
+
+    if (!recaptchaToken) {
+      setMessage({ type: 'error', text: 'No se pudo generar el token de seguridad.' });
+      return;
     }
-  };
+
+    // 3. Enviamos al backend exactamente como lo tenías
+    const response = await axios.post('http://localhost:3000/api/auth/register', {
+      ...formData,
+      recaptchaToken // Este es el nombre que espera nuestro controlador
+    });
+
+    setMessage({ type: 'success', text: '¡Registro exitoso! Redirigiendo...' });
+    setTimeout(() => navigate('/login'), 2000);
+
+  } catch (error) {
+    setMessage({
+      type: 'error',
+      text: error.response?.data?.message || 'Error al registrarse'
+    });
+  }
+};
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
