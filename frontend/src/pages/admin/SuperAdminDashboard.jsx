@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import ModeracionTablonPage from './ModeracionTablonPage';
+import MetricasPage from '../MetricasPage';
 
 const SuperAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('solicitudes');
@@ -11,12 +12,7 @@ const SuperAdminDashboard = () => {
   const [filtroEntidad, setFiltroEntidad] = useState('protectoras'); // Para alternar la vista
   const [showEditModal, setShowEditModal] = useState(false);
   const [editData, setEditData] = useState(null); // Aquí guardaremos lo que estamos editando
-  const [counts, setCounts] = useState({
-    usuarios_totales: 0,
-    protectoras_activas: 0,
-    colonias_activas: 0,
-    usuarios_normales: 0
-  });
+
 
   // --- ESTADOS NUEVOS PARA EL MODAL ---
   const [showModal, setShowModal] = useState(false);
@@ -34,8 +30,6 @@ const SuperAdminDashboard = () => {
       try {
         const token = localStorage.getItem('token');
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const resStats = await axios.get('http://localhost:3000/api/superadmin/stats/global', config);
-        setCounts(resStats.data);
         // 1. Pedimos las solicitudes pendientes
         const resSolicitudes = await axios.get('http://localhost:3000/api/superadmin/solicitudes', config);
         setSolicitudes(resSolicitudes.data);
@@ -371,29 +365,13 @@ const SuperAdminDashboard = () => {
         )}
 
         {/* PESTAÑA: DASHBOARD Y DEMÁS */}
-        {activeTab === 'dashboard' && (
-          <div className="animate-fade-in">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Métricas Globales</h1>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
-                <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Usuarios Totales</h3>
-             <p className="text-4xl font-black text-gray-800 mt-2">{loading ? '...' : counts.usuarios_totales}</p>
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500">
-                <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Protectoras Activas</h3>
-                <p className="text-4xl font-black text-gray-800 mt-2">{loading ? '...' : counts.protectoras_activas}</p>
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500">
-                <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Colonias Activas</h3>
-                <p className="text-4xl font-black text-gray-800 mt-2">{loading ? '...' : counts.colonias_activas}</p>
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-400">
-              <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Usuarios Comunidad</h3>
-                 <p className="text-4xl font-black text-gray-800 mt-2">{loading ? '...' : counts.usuarios_normales}</p>
-              </div>
-            </div>
-          </div>
-        )}
+       {/* PESTAÑA: DASHBOARD (MÉTRICAS) */}
+    {activeTab === 'dashboard' && (
+      <div className="animate-fade-in">
+        {/* Ya no necesitas los cards aquí, los tiene MetricasPage */}
+        <MetricasPage /> 
+      </div>
+    )}
    {/* PESTAÑA: MODERACIÓN DEL TABLÓN */}
         {activeTab === 'moderacion' && (
           <div className="animate-fade-in">

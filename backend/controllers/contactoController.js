@@ -5,7 +5,7 @@ const enviarContacto = async (req, res) => {
   const { nombre, email, mensaje } = req.body;
 
   const msg = {
-    to: 'conexionanimal2026@outlook.com', // El tuyo
+    to: 'reyesmanuelzarate@gmail.com', 
     from: 'conexionanimal2026@outlook.com', // El verificado en SendGrid
     replyTo: email,
     subject: `Nuevo mensaje de contacto: ${nombre}`,
