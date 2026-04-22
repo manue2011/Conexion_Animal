@@ -16,6 +16,7 @@ const adopcionRoutes = require('./routes/adopcionRoutes');
 const postsRoutes = require('./routes/postsRoutes');
 const necesidadesRoutes = require('./routes/necesidadesRoutes');
 const contactoRoutes = require('./routes/contactoRoutes');
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
 
 const app = express();
 app.use(helmet());
@@ -53,6 +54,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/adopciones', adopcionRoutes);
 app.use('/api/necesidades', necesidadesRoutes);
 app.use('/api/contacto', contactoRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 // 4. RUTA DE PRUEBA (Health Check)
 app.get('/health', async (req, res) => {
   try {

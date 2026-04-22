@@ -8,7 +8,7 @@ const {
   getPublicAnimals,
   getAnimalById
 } = require("../controllers/animalController");
-const { verifyToken } = require("../middleware/authMiddleware");
+const { verifyToken, checkAnimalLimit } = require("../middleware/authMiddleware");
 const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
 
@@ -21,7 +21,7 @@ router.get("/public/:id", getAnimalById);
 router.get("/", verifyToken, getAnimals); 
 // Ruta pública para la Home (Sin verifyToken)
 // POST para crear animal
-router.post("/", verifyToken, upload.single("foto_url"), createAnimal);
+router.post("/", verifyToken,checkAnimalLimit, upload.single("foto_url"), createAnimal);
 
 // PUT y DELETE
 router.put("/:id", verifyToken, updateAnimal);

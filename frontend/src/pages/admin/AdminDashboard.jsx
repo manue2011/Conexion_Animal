@@ -6,7 +6,7 @@ import axios from 'axios';
 import AnimalForm from '../../components/AnimalForm';
 import AnimalList from '../../components/AnimalList';
 import AdoptionRequests from '../../components/AdoptionRequests';
-
+import SubscriptionStatus from '../../components/SubscriptionStatus'; 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -105,6 +105,10 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      <div className="animate-fade-in">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Visión General</h2>   
+        <SubscriptionStatus /> 
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
           <h3 className="text-gray-500 text-sm">Protectora</h3>
@@ -162,6 +166,7 @@ const AdminDashboard = () => {
           <button onClick={() => setActiveView('solicitudes')} className={`w-full text-left py-3 px-4 rounded transition flex items-center gap-3 ${activeView === 'solicitudes' ? 'bg-blue-600' : 'hover:bg-slate-700 text-gray-300'}`}> 💌 Solicitudes </button>
           <button onClick={() => setIsProfileModalOpen(true)} className="w-full text-left py-3 px-4 rounded transition flex items-center gap-3 hover:bg-slate-700 text-gray-300"> ⚙️ Configuración </button>
           <button onClick={() => setIsNeedModalOpen(true)} className="w-full text-left px-4 py-3 rounded-lg font-bold mt-8 transition shadow-md flex justify-between items-center bg-red-600 hover:bg-red-700 text-white" ><span>🚨 Pedir Ayuda</span></button>
+          <button onClick={() => setActiveView('plan')} className={`w-full text-left py-3 px-4 rounded transition flex items-center gap-3 ${activeView === 'plan' ? 'bg-blue-600' : 'hover:bg-slate-700 text-gray-300'}`}> 💳 Mi Plan </button>  
         </nav>
         <div className="p-4 border-t border-slate-700">
           <button onClick={handleLogout} className="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded font-bold transition"> Cerrar Sesión </button>
@@ -174,6 +179,7 @@ const AdminDashboard = () => {
             {activeView === 'resumen' && 'Dashboard'}
             {activeView === 'animales' && 'Inventario'}
             {activeView === 'solicitudes' && 'Adopciones'}
+            {activeView === 'plan' && 'Suscripción y Límites'}
           </h1>
           <div className="text-sm text-gray-500 bg-white px-4 py-2 rounded-full shadow">
             Usuario: <span className="font-bold text-blue-600">{user.email}</span>
@@ -181,6 +187,11 @@ const AdminDashboard = () => {
         </header>
 
         {activeView === 'resumen' && <RenderResumen />}
+        {activeView === 'plan' && (
+          <div className="max-w-4xl mx-auto animate-fade-in">
+            <SubscriptionStatus />
+          </div>
+        )}
         {activeView === 'animales' && (
           <div className="animate-fade-in">
             {!protectoraInfo?.direccion ? (
