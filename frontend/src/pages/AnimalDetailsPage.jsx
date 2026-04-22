@@ -1,7 +1,8 @@
-// Archivo: frontend/src/pages/AnimalDetailsPage.jsx
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const AnimalDetailsPage = () => {
   const { id } = useParams(); // Recuperamos el ID de la URL
@@ -32,7 +33,7 @@ const AnimalDetailsPage = () => {
     const fetchAnimal = async () => {
       try {
         // Pedimos el animal específico al backend
-        const response = await axios.get(`http://localhost:3000/api/animales/public/${id}`);
+        const response = await axios.get(`${API_URL}/api/animales/public/${id}`);
         
         // Como el backend devuelve el objeto directo, lo guardamos tal cual
         setAnimal(response.data); 
@@ -68,7 +69,7 @@ const AnimalDetailsPage = () => {
   const handleEnviarSolicitud = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3000/api/adopciones', 
+      await axios.post(`${API_URL}/api/adopciones`, 
         { 
           animal_id: animal.id, 
           ...formDatos // Enviamos todos los campos (teléfono, dirección...)

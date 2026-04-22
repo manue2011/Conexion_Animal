@@ -1,4 +1,4 @@
-// Archivo: backend/middleware/authMiddleware.js
+const pool = require('../config/db')
 const jwt = require('jsonwebtoken');
 
 // 1. Verificar si el usuario está logueado (tiene Token)
@@ -71,7 +71,10 @@ const checkAnimalLimit = async (req, res, next) => {
     );
 
     const { plan, prot_id } = userQuery.rows[0];
-
+     if (!prot_id && req.user.role === 'admin') {
+       return res.status(403).json({ message: "Aún no tienes una protectora asignada en el sistema." });
+    }
+    req.user.plan = plan;
     // Si es plan gratuito, contamos sus animales activos
     if (plan === 'free') {
       const countResult = await pool.query(

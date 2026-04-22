@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const SubscriptionStatus = () => {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -9,7 +11,7 @@ const SubscriptionStatus = () => {
     const fetchStatus = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:3000/api/subscriptions/status', {
+        const res = await axios.get(`${API_URL}/api/subscriptions/status`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setStatus(res.data);
@@ -78,6 +80,49 @@ if (status.tipoEntidad === 'colonia') {
               style={{ width: `${animals.percentage}%` }}
             ></div>
           </div>
+        </div>
+                <div className="mt-6 pt-6 border-t border-gray-50">
+          <div className="flex justify-between text-sm mb-2">
+            <span className="text-gray-600 font-medium font-sans">Mensajes en el tablón</span>
+            <span className="font-bold font-sans">
+              {status.limits.messages.used} / {status.limits.messages.max || '∞'}
+            </span>
+          </div>
+          <div className="w-full bg-gray-100 rounded-full h-2.5">
+            <div 
+              className={`h-2.5 rounded-full transition-all duration-1000 ${
+                status.limits.messages.percentage > 80 ? 'bg-orange-500' : 'bg-purple-500'
+              }`} 
+              style={{ width: `${status.limits.messages.percentage}%` }}
+            ></div>
+          </div>
+          <p className="text-[10px] text-gray-400 mt-2 italic font-sans">
+            * Incluye anuncios de donaciones, voluntarios y hogar temporal.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-100">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h4 className="font-bold text-gray-700 mb-3 text-xs uppercase tracking-wider">Incluido en tu plan:</h4>
+            <ul className="space-y-2">
+              {status.features?.map((f, i) => (
+                <li key={i} className="text-sm text-gray-600 flex items-center gap-2">
+                  <span className="text-green-500 font-bold">✓</span> {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {status.plan === 'free' && (
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+              <h4 className="font-bold text-blue-800 mb-3 text-xs uppercase tracking-wider">¿Por qué ser PRO?</h4>
+              <ul className="space-y-2 text-sm text-blue-700">
+                <li className="flex items-start gap-2">⭐ <span><strong>Sin límites:</strong> Publica todo lo que necesites.</span></li>
+                <li className="flex items-start gap-2">⭐ <span><strong>Prioridad:</strong> Tus animales salen antes.</span></li>
+                <li className="flex items-start gap-2">⭐ <span><strong>Soporte 24/7:</strong> Asistencia constante.</span></li>
+
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </div>

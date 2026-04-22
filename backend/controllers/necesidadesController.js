@@ -40,8 +40,6 @@ const crearNecesidad = async (req, res) => {
             contactoEntidad = `📞 ${p.telefono || 'Sin tel. registrado'}`;
           }
         } else if (colonia_id) {
-          // La parte de la colonia se queda exactamente igual, 
-          // porque ahí sí obtenemos el email a través del JOIN con la tabla 'users'
           const colData = await pool.query(`
             SELECT c.nombre, c.direccion, u.telefono, u.email 
             FROM colonias c 
@@ -63,9 +61,9 @@ const crearNecesidad = async (req, res) => {
 
         if (correosVoluntarios.length > 0) {
           const msg = {
-            to: 'conexionanimal2026@outlook.com', // 👈 Tu correo
-            bcc: correosVoluntarios, // 👈 Copia oculta a todos los voluntarios
-            from:'conexionanimal2026@outlook.com', // 👈 Tu correo verificado
+            to: 'conexionanimal2026@outlook.com', //  mi correo
+            bcc: correosVoluntarios, //  Copia  a todos los voluntarios
+            from:'conexionanimal2026@outlook.com', //  Tu correo verificado
             subject: `🚨 ALERTA URGENTE: ${titulo}`,
             html: `
               <div style="font-family: Arial, sans-serif; padding: 20px; border: 2px solid #ef4444; border-radius: 10px; max-width: 600px; margin: 0 auto;">

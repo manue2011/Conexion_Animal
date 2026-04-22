@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const TablonPage = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +26,7 @@ const TablonPage = () => {
 
   const fetchPosts = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/api/posts'); 
+      const response = await axios.get(`${API_URL}/api/posts`); 
       setPosts(response.data);
       setLoading(false);
     } catch (err) {
@@ -40,7 +42,7 @@ const TablonPage = () => {
       if (!token) return alert("Sesión expirada");
 
       await axios.post(
-        'http://localhost:3000/api/posts', 
+        `${API_URL}/api/posts`, 
         nuevoPost, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -157,6 +159,14 @@ const TablonPage = () => {
                   <span className="text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded">{post.categoria.replace('_', ' ')}</span>
                   {post.codigo_postal && <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">📍 CP: {post.codigo_postal}</span>}
                 </div>
+                {post.plan_autor === 'pro' && (
+                  <span 
+                    title="Protectora Verificada" 
+                    className="inline-flex items-center bg-blue-100 text-blue-600 text-[9px] font-black px-1 py-0.5 rounded shadow-sm border border-blue-200 animate-pulse tracking-tighter mt-2"
+                  >
+                    <span className="mr-0.8">🛡️</span>VERIFICADO
+                  </span>
+                )}
               </div>
 
               <p className="text-gray-700 text-sm mb-6 flex-1 italic line-clamp-4">"{post.contenido}"</p>
@@ -166,7 +176,8 @@ const TablonPage = () => {
                 <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Publicado por</p>
                 <div className="space-y-1 text-xs text-gray-700">
                   <p className="flex items-center gap-2">
-                    <span>👤</span> <span className="font-bold">{post.nombre_autor || post.autor_email}</span>
+                    <span>👤</span> 
+                    <span className="font-bold">{post.nombre_autor || post.autor_email}</span>
                   </p>
                   {post.autor_telefono && (
                     <p className="flex items-center gap-2">

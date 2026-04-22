@@ -19,7 +19,11 @@ const contactoRoutes = require('./routes/contactoRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 
 const app = express();
+
+app.set('trust proxy', 1);
+
 app.use(helmet());
+
 // 2. MIDDLEWARES GLOBALES (¡Siempre van primero!)
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -55,6 +59,7 @@ app.use('/api/adopciones', adopcionRoutes);
 app.use('/api/necesidades', necesidadesRoutes);
 app.use('/api/contacto', contactoRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
+
 // 4. RUTA DE PRUEBA (Health Check)
 app.get('/health', async (req, res) => {
   try {
@@ -73,5 +78,5 @@ app.get('/health', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
 });

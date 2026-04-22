@@ -1,5 +1,7 @@
-  import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const MetricasPage = () => {
   const [counts, setCounts] = useState({
@@ -21,7 +23,7 @@ const MetricasPage = () => {
   const cargarMetricas = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:3000/api/superadmin/stats/global', {
+      const res = await axios.get(`${API_URL}/api/superadmin/stats/global`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

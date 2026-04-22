@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import SubscriptionStatus from '../../components/SubscriptionStatus'; 
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const ColoniaDashboard = () => {
   const [animales, setAnimales] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +42,7 @@ const ColoniaDashboard = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:3000/api/necesidades', {
+      await axios.post(`${API_URL}/api/necesidades`, {
         ...needForm,
         colonia_id: coloniaInfo.id 
       }, {
@@ -63,7 +65,7 @@ const ColoniaDashboard = () => {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
       
-      const resColonia = await axios.get('http://localhost:3000/api/usuarios/mi-colonia', config);
+      const resColonia = await axios.get(`${API_URL}/api/usuarios/mi-colonia`, config);
       setColoniaInfo(resColonia.data);
       setPerfilForm({
         descripcion: resColonia.data.descripcion || '',
@@ -71,7 +73,7 @@ const ColoniaDashboard = () => {
         codigo_postal: resColonia.data.codigo_postal || ''
       });
 
-      const resAnimales = await axios.get('http://localhost:3000/api/animales', config);
+      const resAnimales = await axios.get(`${API_URL}/api/animales`, config);
       setAnimales(resAnimales.data);
 
     }  catch (err) {
@@ -91,7 +93,7 @@ const ColoniaDashboard = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:3000/api/usuarios/colonia/${coloniaInfo.id}`, perfilForm, {
+      await axios.put(`${API_URL}/api/usuarios/colonia/${coloniaInfo.id}`, perfilForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIsProfileModalOpen(false);
@@ -130,7 +132,7 @@ const ColoniaDashboard = () => {
       
       if (file) data.append('foto_url', file);
 
-      await axios.post('http://localhost:3000/api/animales', data, {
+      await axios.post(`${API_URL}/api/animales`, data, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -152,7 +154,7 @@ const ColoniaDashboard = () => {
     if (!window.confirm('¿Estás seguro de que quieres archivar este registro?')) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3000/api/animales/${id}`, {
+      await axios.delete(`${API_URL}/api/animales/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAnimales(animales.filter(a => a.id !== id));

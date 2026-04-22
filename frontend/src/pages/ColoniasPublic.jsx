@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const ColoniasPublic = () => {
   const [colonias, setColonias] = useState([]);
   const [filtroCP, setFiltroCP] = useState('');
@@ -10,8 +12,8 @@ const ColoniasPublic = () => {
   useEffect(() => {
     const fetchColonias = async () => {
       try {
-        // Llamamos a la ruta pública que creamos hace un rato
-       const res = await axios.get('http://localhost:3000/api/usuarios/public');
+        // Llamamos a la ruta pública usando API_URL
+        const res = await axios.get(`${API_URL}/api/usuarios/public`);
         setColonias(res.data);
       } catch (err) {
         console.error("Error al cargar colonias:", err);

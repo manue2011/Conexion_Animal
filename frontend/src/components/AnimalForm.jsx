@@ -1,6 +1,7 @@
-// Archivo: frontend/src/components/AnimalForm.jsx
 import { useState } from 'react';
 import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const AnimalForm = ({ onSuccess }) => {
   // 🔑 LA LLAVE: Obtenemos el usuario del localStorage para que el componente sepa quién eres
@@ -48,7 +49,7 @@ const AnimalForm = ({ onSuccess }) => {
 
       const token = localStorage.getItem('token');
 
-      await axios.post('http://localhost:3000/api/animales', data, {
+      await axios.post(`${API_URL}/api/animales`, data, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
