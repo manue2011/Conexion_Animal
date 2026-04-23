@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { getPendingRequests, procesarSolicitud,getEntidadesExistentes, obtenerMetricasGlobales, obtenerListadoEntidades, actualizarEntidad, obtenerStaff, asignarSuperAdmin } = require('../controllers/superAdminController');
+const { getPendingRequests, procesarSolicitud,getEntidadesExistentes, obtenerMetricasGlobales, obtenerListadoEntidades, actualizarEntidad, obtenerStaff, asignarSuperAdmin, obtenerUsuariosPro} = require('../controllers/superAdminController');
 const { verifyToken, verifySuperAdmin } = require('../middleware/authMiddleware');
 
 // Ruta para ver pendientes
 router.get('/solicitudes', verifyToken, verifySuperAdmin, getPendingRequests);
 
-// NUEVA RUTA: Para aprobar o rechazar (usamos PUT porque estamos actualizando un dato)
+// NUEVA RUTA: Para aprobar o rechazar
 router.put('/solicitudes/:id', verifyToken, verifySuperAdmin, procesarSolicitud);
 
 // Ruta para obtener entidades existentes
@@ -15,6 +15,10 @@ router.get('/stats/global', verifyToken, verifySuperAdmin, obtenerMetricasGlobal
 router.get('/entidades-maestro', verifyToken, verifySuperAdmin, obtenerListadoEntidades);
 router.put('/entidades/:tipo/:id', verifyToken, verifySuperAdmin, actualizarEntidad);
 router.get('/staff', verifyToken, verifySuperAdmin, obtenerStaff);
+
+
+router.get('/usuarios-pro', verifyToken, verifySuperAdmin, obtenerUsuariosPro);
+
 router.post('/staff/asignar', verifyToken, verifySuperAdmin, asignarSuperAdmin);
 
 module.exports = router;

@@ -1,4 +1,3 @@
-// Archivo: backend/index.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -6,7 +5,7 @@ const db = require('./config/db'); // Importamos la conexión
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
-// 1. IMPORTACIÓN DE RUTAS (Todas agrupadas)
+// 1. IMPORTACIÓN DE RUTAS
 const coloniaRoutes = require('./routes/coloniaRoutes');
 const superAdminRoutes = require('./routes/superAdminRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -18,13 +17,13 @@ const necesidadesRoutes = require('./routes/necesidadesRoutes');
 const contactoRoutes = require('./routes/contactoRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 
+// --- CREAMOS LA APP ---
 const app = express();
 
 app.set('trust proxy', 1);
-
 app.use(helmet());
 
-// 2. MIDDLEWARES GLOBALES (¡Siempre van primero!)
+// 2. MIDDLEWARES GLOBALES
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
@@ -46,7 +45,8 @@ app.use('/api/', generalLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
-app.use(express.json()); // Para que el servidor entienda JSON
+app.use('/api/subscriptions/webhook', express.raw({ type: 'application/json' }));
+app.use(express.json()); 
 
 // 3. USO DE LAS RUTAS DE LA API (Todas agrupadas)
 app.use('/api/colonias', coloniaRoutes);

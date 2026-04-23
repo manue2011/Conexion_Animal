@@ -1,5 +1,7 @@
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const pool = require('../config/db');
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const getSubscriptionStatus = async (req, res) => {
   const userId = req.user.id; // Este es el ID del usuario (UUID)
 
@@ -95,5 +97,63 @@ const getSubscriptionStatus = async (req, res) => {
     res.status(500).json({ message: 'Error en el servidor', detail: error.message });
   }
 };
+const createCheckoutSession = async (req, res) => {
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'subscription',
+      customer_email: req.user.email,
+      client_reference_id: req.user.id, // Guardamos el ID del usuario para el webhook
+      line_items: [{
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: 'Conexión Animal - Plan Pro 🐾',
+            description: 'Animales ilimitados, posts ilimitados y soporte prioritario.'
+          },
+          unit_amount: 1900, // 19.00€ en céntimos
+          recurring: { interval: 'month' }
+        },
+        quantity: 1
+      }],
+      success_url: `${FRONTEND_URL}/admin/dashboard?plan=success`,
+      cancel_url: `${FRONTEND_URL}/admin/dashboard?plan=cancelled`
+    });
 
-module.exports = { getSubscriptionStatus };
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error("Error creando sesión Stripe:", err);
+    res.status(500).json({ message: "Error al iniciar el proceso de pago." });
+  }
+};
+
+// 3. NUEVA: Recibir el aviso de pago completado (Webhook)
+const handleStripeWebhook = async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    // Verificamos que la petición viene de Stripe y no de un hacker
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error("Webhook Error de firma:", err.message);
+    return res.status(400).json({ message: `Webhook Error: ${err.message}` });
+  }
+
+  // Cuando el pago se completa, actualizamos el plan a 'pro'
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const userId = session.client_reference_id;
+
+    try {
+      await pool.query("UPDATE users SET plan = 'pro' WHERE id = $1", [userId]);
+      console.log(`✅ ¡ÉXITO! Usuario ${userId} actualizado a Plan Pro`);
+    } catch (dbErr) {
+      console.error("Error al actualizar la base de datos en webhook:", dbErr);
+    }
+  }
+
+  res.json({ received: true });
+};
+
+module.exports = { getSubscriptionStatus, createCheckoutSession, handleStripeWebhook };

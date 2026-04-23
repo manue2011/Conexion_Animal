@@ -1,10 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { getSubscriptionStatus } = require('../controllers/subscriptionController');
 const { verifyToken } = require('../middleware/authMiddleware');
+const { 
+  getSubscriptionStatus, 
+  createCheckoutSession, 
+  handleStripeWebhook 
+} = require('../controllers/subscriptionController');
 
-// GET /api/subscriptions/status
-// Usamos verifyToken para saber quién es el usuario logueado
 router.get('/status', verifyToken, getSubscriptionStatus);
+
+router.post('/create-checkout', verifyToken, createCheckoutSession);
+
+router.post('/webhook', handleStripeWebhook);
 
 module.exports = router;

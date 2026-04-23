@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback  } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -32,33 +32,33 @@ const AdminDashboard = () => {
   const [perfilForm, setPerfilForm] = useState({ descripcion: '', direccion: '', telefono: '' });
 
   const fetchData = useCallback(async () => {
-  try {
-    const token = localStorage.getItem('token');
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    
-    // 1. Pedimos la info de la protectora
-    const resProt = await axios.get(`${API_URL}/api/usuarios/mi-protectora`, config);
-    setProtectoraInfo(resProt.data);
-    
-    if (resProt.data.plan) {
-      setUser(prev => ({ ...prev, plan: resProt.data.plan }));
+    try {
+      const token = localStorage.getItem('token');
+      const config = { headers: { Authorization: `Bearer ${token}` } };
       
-      const localUserData = JSON.parse(localStorage.getItem('user'));
-      if (localUserData && localUserData.plan !== resProt.data.plan) {
-        localUserData.plan = resProt.data.plan;
-        localStorage.setItem('user', JSON.stringify(localUserData));
+      // 1. Pedimos la info de la protectora
+      const resProt = await axios.get(`${API_URL}/api/usuarios/mi-protectora`, config);
+      setProtectoraInfo(resProt.data);
+      
+      if (resProt.data.plan) {
+        setUser(prev => ({ ...prev, plan: resProt.data.plan }));
+        
+        const localUserData = JSON.parse(localStorage.getItem('user'));
+        if (localUserData && localUserData.plan !== resProt.data.plan) {
+          localUserData.plan = resProt.data.plan;
+          localStorage.setItem('user', JSON.stringify(localUserData));
+        }
       }
-    }
 
-    setPerfilForm({
-      descripcion: resProt.data.descripcion || '',
-      direccion: resProt.data.direccion || '',
-      telefono: resProt.data.telefono || ''
-    });
-  } catch (err) {
-    console.error("Error cargando dashboard:", err);
-  }
-}, []);
+      setPerfilForm({
+        descripcion: resProt.data.descripcion || '',
+        direccion: resProt.data.direccion || '',
+        telefono: resProt.data.telefono || ''
+      });
+    } catch (err) {
+      console.error("Error cargando dashboard:", err);
+    }
+  }, []);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -102,8 +102,34 @@ const AdminDashboard = () => {
 
   if (!user) return <div className="p-10">Cargando...</div>;
 
+  // --- LÓGICA DE PETICIONES DE AYUDA ---
+  const handleSubmitNeed = async (e) => {
+    e.preventDefault();
+    if (isSubmittingNeed) return;
+    setIsSubmittingNeed(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_URL}/api/necesidades`, {
+        ...needForm,
+        protectora_id: protectoraInfo.id
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      alert(needForm.prioridad === 'urgente' ? '¡Alerta enviada a los voluntarios!' : 'Petición publicada correctamente.');
+      setIsNeedModalOpen(false);
+      setNeedForm({ titulo: '', categoria: 'comida', descripcion: '', prioridad: 'normal' });
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al publicar la petición.');
+    } finally {
+      setIsSubmittingNeed(false);
+    }
+  };
+
   // --- VISTAS ---
-  const RenderResumen = () => (
+  // SOLUCIÓN AL BUCLE: Se declara como variable (minúscula y sin función flecha)
+  const renderResumen = (
     <div className="animate-fade-in">      
       {/* 🚨 AVISO PERFIL INCOMPLETO */}
       {protectoraInfo && (!protectoraInfo.direccion || !protectoraInfo.descripcion) && (
@@ -143,34 +169,6 @@ const AdminDashboard = () => {
       </div>
     </div>
   );
-
-  // --- LÓGICA DE PETICIONES DE AYUDA ---
-  const handleSubmitNeed = async (e) => {
-    e.preventDefault();
-    if (isSubmittingNeed) return;
-    setIsSubmittingNeed(true);
-
-    try {
-      const token = localStorage.getItem('token');
-      // 👇 AQUÍ ESTÁ LA DIFERENCIA: Enviamos protectora_id
-      await axios.post(`${API_URL}/api/necesidades`, {
-        ...needForm,
-        protectora_id: protectoraInfo.id
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      alert(needForm.prioridad === 'urgente' ? '¡Alerta enviada a los voluntarios!' : 'Petición publicada correctamente.');
-      setIsNeedModalOpen(false);
-      setNeedForm({ titulo: '', categoria: 'comida', descripcion: '', prioridad: 'normal' });
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error al publicar la petición.');
-    } finally {
-      setIsSubmittingNeed(false);
-    }
-  };
-
-  console.log("Datos del usuario en el Dashboard:", user);
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
@@ -214,7 +212,9 @@ const AdminDashboard = () => {
           </div>
         </header>
 
-        {activeView === 'resumen' && <RenderResumen />}
+        {/* CÓMO SE RENDERIZA LA VARIABLE */}
+        {activeView === 'resumen' && renderResumen}
+        
         {activeView === 'plan' && (
           <div className="max-w-4xl mx-auto animate-fade-in">
             <SubscriptionStatus />
