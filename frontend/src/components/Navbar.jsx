@@ -32,48 +32,48 @@ const Navbar = () => {
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full mx-auto px-2 xl:px-8">
         <div className="flex justify-between h-16 items-center">
           
           {/* LOGO */}
-          <Link to="/" className="flex items-center">
+          <Link to="/" className="flex items-center min-w-max">
             <span className="text-2xl mr-2">🐾</span>
-            <span className="font-bold text-xl text-blue-600 tracking-tight">Conexión Animal</span>
+            <span className="font-bold text-xl text-blue-600 tracking-tight hidden md:block">Conexión Animal</span>
           </Link>
 
           {/* ENLACES */}
-          <div className="flex space-x-4 items-center">
-            <Link to="/" className="text-gray-600 hover:text-blue-500 px-3 py-2 font-medium">
-              Inicio
+          <div className="flex space-x-1 lg:space-x-3 items-center">
+            <Link to="/" className="text-gray-600 hover:text-blue-500 px-2 py-2 font-medium whitespace-nowrap">
+             🏠 Inicio
             </Link>
             
             <Link 
               to="/colonias" 
-              className="flex items-center gap-1 text-gray-600 hover:text-blue-600 font-bold px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
+              className="flex items-center gap-1 text-gray-600 hover:text-blue-600 font-bold px-2 py-2 rounded-lg hover:bg-blue-50 transition-colors whitespace-nowrap"
             >
-              🗺️ Red de Colonias
+              🗺️ <span className="hidden xl:inline">Red de </span>Colonias
             </Link>
 
-            <Link to="/contacto" className="text-gray-700 hover:text-blue-600 font-medium px-3 py-2">
+            <Link to="/contacto" className="text-gray-700 hover:text-blue-600 font-medium px-2 py-2 whitespace-nowrap">
             ✉️ Contacto
             </Link>
             
-            <Link to="/sobre-nosotros" className="text-gray-700 hover:text-blue-600 px-3 py-2 font-medium">
+            <Link to="/sobre-nosotros" className="text-gray-700 hover:text-blue-600 px-2 py-2 font-medium whitespace-nowrap">
               🤝 Conócenos
             </Link>        
             
             <Link 
               to="/tablon" 
-              className="flex items-center gap-1 text-gray-600 hover:text-orange-600 font-bold px-4 py-2 rounded-lg hover:bg-orange-50 transition-colors"
+              className="flex items-center gap-1 text-gray-600 hover:text-orange-600 font-bold px-2 py-2 rounded-lg hover:bg-orange-50 transition-colors whitespace-nowrap"
             >
-              📢 Tablón de Ayuda
+              📢 Tablón<span className="hidden xl:inline"> de Ayuda</span>
             </Link>
 
-            {/* --- NUEVO: MENÚ DESPLEGABLE "MÁS" --- */}
+            {/* --- MENÚ DESPLEGABLE "MÁS" --- */}
             <div className="relative" ref={dropdownRef}>
               <button 
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center gap-1 text-gray-600 hover:text-blue-600 font-bold px-3 py-2 rounded-lg transition-colors focus:outline-none"
+                className="flex items-center gap-1 text-gray-600 hover:text-blue-600 font-bold px-2 py-2 rounded-lg transition-colors focus:outline-none whitespace-nowrap"
               >
                 ➕ Más 
                 <svg className={`w-4 h-4 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,7 +85,7 @@ const Navbar = () => {
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in z-50">
                   <Link 
-                    to="/adoptados" // Tendrás que crear esta ruta si no existe
+                    to="/adoptados"
                     onClick={() => setIsDropdownOpen(false)}
                     className="flex items-start gap-3 px-4 py-3 hover:bg-green-50 transition-colors group"
                   >
@@ -99,7 +99,7 @@ const Navbar = () => {
                   <div className="border-t border-gray-100 my-1"></div>
 
                   <Link 
-                    to="/planes" // Tendrás que crear esta página para enseñar los planes
+                    to="/planes"
                     onClick={() => setIsDropdownOpen(false)}
                     className="flex items-start gap-3 px-4 py-3 hover:bg-purple-50 transition-colors group"
                   >
@@ -112,38 +112,34 @@ const Navbar = () => {
                 </div>
               )}
             </div>
-            {/* -------------------------------------- */}
 
+            {/* BOTONES DE USUARIO */}
             {isLoggedIn ? (
-              <>
-                {/* Botón exclusivo para Manuel (SuperAdmin) */}
+              <div className="flex items-center border-l border-gray-300 pl-2 ml-1">
                 {user.role === 'superadmin' && (
-                  <Link to="/superadmin/dashboard" className="bg-yellow-100 text-yellow-800 font-bold px-3 py-2 rounded-lg flex items-center hover:bg-yellow-200 transition">
+                  <Link to="/superadmin/dashboard" className="bg-yellow-100 text-yellow-800 font-bold px-3 py-2 rounded-lg flex items-center hover:bg-yellow-200 transition whitespace-nowrap">
                     👑 Cuartel General
                   </Link>
                 )}
 
-                {/* Botón para Protectoras (Admin normal) */}
                 {user.role === 'admin' && (
-                  <Link to="/admin/dashboard" className="text-blue-600 font-bold px-3 py-2">
+                  <Link to="/admin/dashboard" className="text-blue-600 font-bold px-3 py-2 whitespace-nowrap">
                     Panel Admin
                   </Link>
                 )}
                  
-                {/* Botón para Gestores de Colonias */}
                 {user.role === 'gestor' && (
-                  <Link to="/colonia/dashboard" className="bg-blue-100 text-blue-800 font-bold px-3 py-2 rounded-lg flex items-center hover:bg-blue-200 transition">
+                  <Link to="/colonia/dashboard" className="bg-blue-100 text-blue-800 font-bold px-3 py-2 rounded-lg flex items-center hover:bg-blue-200 transition whitespace-nowrap">
                     🐱 Gestión Colonia
                   </Link>
                 )}
   
-                {/* Botón para Usuarios Normales */}
                 {user.role === 'user' && (
-                  <div className="flex gap-2">
-                    <Link to="/mis-solicitudes" className="text-gray-600 hover:text-blue-600 font-bold px-3 py-2">
-                      📋 Mis Solicitudes
+                  <div className="flex gap-1 xl:gap-2">
+                    <Link to="/mis-solicitudes" className="text-gray-600 hover:text-blue-600 font-bold px-2 py-2 whitespace-nowrap">
+                      📋 <span className="hidden lg:inline">Mis Solicitudes</span>
                     </Link>
-                    <Link to="/solicitar-rol" className="bg-green-100 text-green-800 font-bold px-3 py-2 rounded-lg flex items-center hover:bg-green-200 transition">
+                    <Link to="/solicitar-rol" className="bg-green-100 text-green-800 font-bold px-3 py-2 rounded-lg flex items-center hover:bg-green-200 transition whitespace-nowrap">
                       🤝 Trabaja con nosotros
                     </Link>
                   </div>
@@ -151,20 +147,20 @@ const Navbar = () => {
 
                 <button 
                   onClick={handleLogout}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition ml-4"
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition ml-2 whitespace-nowrap"
                 >
                   Salir
                 </button>
-              </>
+              </div>
             ) : (
-              <>
-                <Link to="/login" className="text-gray-600 hover:text-blue-500 px-3 py-2">
+              <div className="flex items-center border-l border-gray-300 pl-2 ml-1 gap-2">
+                <Link to="/login" className="text-gray-600 hover:text-blue-500 px-2 py-2 whitespace-nowrap">
                   Entrar
                 </Link>
-                <Link to="/register" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                <Link to="/register" className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition whitespace-nowrap">
                   Registrarse
                 </Link>
-              </>
+              </div>
             )}
           </div>
         </div>

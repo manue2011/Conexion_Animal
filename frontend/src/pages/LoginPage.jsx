@@ -19,7 +19,6 @@ const LoginPage = () => {
     e.preventDefault();
     setError('');
     const { email, password } = formData;
-    console.log("Datos que envío:", { email, password });
     if (!executeRecaptcha) {
       setError('ReCAPTCHA no está disponible');
       return;
