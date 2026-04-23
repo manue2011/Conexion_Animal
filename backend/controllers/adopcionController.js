@@ -29,7 +29,7 @@ const crearSolicitud = async (req, res) => {
   }
 };
 
-// 2. LEER SOLICITUDES FILTRADAS (¡Aquí aplicamos la privacidad!)
+// 2. LEER SOLICITUDES FILTRADAS 
 const getSolicitudes = async (req, res) => {
   const userId = req.user.id;
   const userRole = req.user.role;

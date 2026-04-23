@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const MisSolicitudesPage = () => {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,7 +12,7 @@ const MisSolicitudesPage = () => {
       try {
         const token = localStorage.getItem('token');
         // OJO: Necesitaremos crear esta ruta en el backend luego
-        const res = await axios.get('http://localhost:3000/api/adopciones/mis-solicitudes', {
+        const res = await axios.get(`${API_URL}/api/adopciones/mis-solicitudes`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setSolicitudes(res.data);

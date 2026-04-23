@@ -10,8 +10,8 @@ const getPendingRequests = async (req, res) => {
         sr.mensaje, 
         sr.estado, 
         u.email,
-        u.telefono,             -- ¡NUEVO! Extraemos el teléfono
-        u.entidad_solicitada    -- ¡NUEVO! Extraemos el nombre de la protectora/colonia
+        u.telefono,             
+        u.entidad_solicitada    
       FROM solicitudes_rol sr
       JOIN users u ON sr.user_id = u.id
       WHERE sr.estado = 'pendiente'
@@ -53,7 +53,7 @@ const procesarSolicitud = async (req, res) => {
       return res.json({ message: 'Solicitud rechazada correctamente' });
     }
 
-    // --- CASO B: APROBAR (Aquí ocurre la magia) ---
+    // --- CASO B: APROBAR 
     if (accion === 'aprobar') {
       
       // 0. Sacamos el teléfono del usuario por si nos hace falta copiarlo
@@ -141,13 +141,23 @@ const getEntidadesExistentes = async (req, res) => {
 };
 const obtenerMetricasGlobales = async (req, res) => {
   try {
-    // Usamos ::INT para convertir el conteo de String a Entero directamente en la BD
     const query = `
       SELECT 
+        -- 1. ECOSISTEMA Y CRECIMIENTO
         (SELECT COUNT(*)::INT FROM users) as usuarios_totales,
         (SELECT COUNT(*)::INT FROM protectoras WHERE estado = 'activo') as protectoras_activas,
+        (SELECT COUNT(*)::INT FROM colonias WHERE estado = 'activo') as colonias_activas,
         (SELECT COUNT(*)::INT FROM users WHERE role = 'user') as usuarios_normales,
-        (SELECT COUNT(*)::INT FROM colonias WHERE estado = 'activo') as colonias_activas
+        (SELECT COUNT(*)::INT FROM users WHERE plan = 'pro') as suscripciones_pro,
+
+        -- 2. IMPACTO SOCIAL (DATOS REALES)
+        (SELECT COUNT(*)::INT FROM animales WHERE estado = 'adoptado') as adopciones_totales,
+        (SELECT COUNT(*)::INT FROM necesidades WHERE prioridad = 'urgente') as alertas_enviadas,
+        (SELECT COUNT(*)::INT FROM animales WHERE estado = 'activo') as animales_buscando,
+
+        -- 3. GOBERNANZA Y SEGURIDAD
+        (SELECT COUNT(*)::INT FROM solicitudes_rol WHERE estado = 'pendiente') as solicitudes_pendientes,
+        (SELECT COUNT(*)::INT FROM posts WHERE estado = 'pending') as posts_pendientes
     `;
     
     const result = await pool.query(query);
@@ -246,7 +256,22 @@ const asignarSuperAdmin = async (req, res) => {
     res.status(500).json({ error: "Error al procesar la solicitud en la base de datos" });
   }
 };
+const obtenerUsuariosPro = async (req, res) => {
+  try {
+    const query = `
+      SELECT id, email, role, created_at, plan
+      FROM users 
+      WHERE plan = 'pro'
+      ORDER BY created_at DESC;
+    `;
+    const result = await pool.query(query);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("❌ Error al obtener usuarios PRO:", error.message);
+    res.status(500).json({ error: "Error al obtener la lista de usuarios PRO" });
+  }
+};
 
 
 
-module.exports = { getPendingRequests, getEntidadesExistentes, procesarSolicitud, obtenerMetricasGlobales, obtenerListadoEntidades, actualizarEntidad, obtenerStaff, asignarSuperAdmin };
+module.exports = { getPendingRequests, getEntidadesExistentes, procesarSolicitud, obtenerMetricasGlobales, obtenerListadoEntidades, actualizarEntidad, obtenerStaff, asignarSuperAdmin, obtenerUsuariosPro };

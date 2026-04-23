@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const AnimalList = ({ refreshTrigger }) => {
   const [animales, setAnimales] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,7 +12,7 @@ const AnimalList = ({ refreshTrigger }) => {
     try {
       const token = localStorage.getItem('token'); // <-- Recuperamos el token
       
-      const response = await axios.get('http://localhost:3000/api/animales', {
+      const response = await axios.get(`${API_URL}/api/animales`, {
         headers: {
           Authorization: `Bearer ${token}` // <-- Le enseñamos el carnet al backend
         }
@@ -34,7 +36,7 @@ const AnimalList = ({ refreshTrigger }) => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3000/api/animales/${id}`, {
+      await axios.delete(`${API_URL}/api/animales/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchAnimales();

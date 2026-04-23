@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import ModeracionTablonPage from './ModeracionTablonPage';
+import MetricasPage from '../MetricasPage';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const SuperAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('solicitudes');
@@ -11,12 +14,6 @@ const SuperAdminDashboard = () => {
   const [filtroEntidad, setFiltroEntidad] = useState('protectoras'); // Para alternar la vista
   const [showEditModal, setShowEditModal] = useState(false);
   const [editData, setEditData] = useState(null); // Aquí guardaremos lo que estamos editando
-  const [counts, setCounts] = useState({
-    usuarios_totales: 0,
-    protectoras_activas: 0,
-    colonias_activas: 0,
-    usuarios_normales: 0
-  });
 
   // --- ESTADOS NUEVOS PARA EL MODAL ---
   const [showModal, setShowModal] = useState(false);
@@ -29,24 +26,26 @@ const SuperAdminDashboard = () => {
   const [nombreNuevaEntidad, setNombreNuevaEntidad] = useState('');
   const [staff, setStaff] = useState([]);
   const [nuevoAdminEmail, setNuevoAdminEmail] = useState('');
+
   useEffect(() => {
     const fetchDatos = async () => {
       try {
         const token = localStorage.getItem('token');
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const resStats = await axios.get('http://localhost:3000/api/superadmin/stats/global', config);
-        setCounts(resStats.data);
+        
         // 1. Pedimos las solicitudes pendientes
-        const resSolicitudes = await axios.get('http://localhost:3000/api/superadmin/solicitudes', config);
+        const resSolicitudes = await axios.get(`${API_URL}/api/superadmin/solicitudes`, config);
         setSolicitudes(resSolicitudes.data);
 
-        // 2. Pedimos las entidades que ya existen (La ruta que acabamos de crear)
-        const resEntidades = await axios.get('http://localhost:3000/api/superadmin/entidades-existentes', config);
+        // 2. Pedimos las entidades que ya existen
+        const resEntidades = await axios.get(`${API_URL}/api/superadmin/entidades-existentes`, config);
         setEntidades(resEntidades.data);
-       const resMaestro = await axios.get('http://localhost:3000/api/superadmin/entidades-maestro', config);
+        
+        const resMaestro = await axios.get(`${API_URL}/api/superadmin/entidades-maestro`, config);
         setListadoMaestro(resMaestro.data);
-      const resStaff = await axios.get('http://localhost:3000/api/superadmin/staff', config);
-      setStaff(resStaff.data);
+        
+        const resStaff = await axios.get(`${API_URL}/api/superadmin/staff`, config);
+        setStaff(resStaff.data);
       } catch (err) {
         console.error('Error al cargar datos:', err);
         setError('Hubo un problema al cargar los datos del servidor.');
@@ -62,7 +61,7 @@ const SuperAdminDashboard = () => {
     if (!window.confirm('¿Seguro que quieres rechazar esta solicitud?')) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:3000/api/superadmin/solicitudes/${id}`, 
+      await axios.put(`${API_URL}/api/superadmin/solicitudes/${id}`, 
         { accion: 'rechazar' }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -93,7 +92,7 @@ const SuperAdminDashboard = () => {
         entidadNombre: nombreNuevaEntidad
       };
 
-      await axios.put(`http://localhost:3000/api/superadmin/solicitudes/${selectedSolicitud.id}`, 
+      await axios.put(`${API_URL}/api/superadmin/solicitudes/${selectedSolicitud.id}`, 
         payload, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -107,6 +106,7 @@ const SuperAdminDashboard = () => {
       alert('Error al aprobar la solicitud');
     }
   };
+
   const abrirModalEdicion = (entidad) => {
     setEditData({ ...entidad, tipo: filtroEntidad }); 
     setShowEditModal(true);
@@ -116,7 +116,7 @@ const SuperAdminDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       const res = await axios.put(
-        `http://localhost:3000/api/superadmin/entidades/${editData.tipo}/${editData.id}`,
+        `${API_URL}/api/superadmin/entidades/${editData.tipo}/${editData.id}`,
         editData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -135,22 +135,23 @@ const SuperAdminDashboard = () => {
   };
 
   const handlePromoverAdmin = async () => {
-  if (!window.confirm(`¿Estás seguro de darle poder total a ${nuevoAdminEmail}?`)) return;
-  try {
-    const token = localStorage.getItem('token');
-    await axios.post('http://localhost:3000/api/superadmin/staff/asignar', 
-      { email: nuevoAdminEmail.toLowerCase().trim() }, 
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    alert("¡Nuevo SuperAdmin dado de alta!");
-    setNuevoAdminEmail('');
-    // Recargar lista
-    const res = await axios.get('http://localhost:3000/api/superadmin/staff', { headers: { Authorization: `Bearer ${token}` } });
-    setStaff(res.data);
-  } catch (err) {
-    alert("El usuario no existe o ya es admin.");
-  }
-};
+    if (!window.confirm(`¿Estás seguro de darle poder total a ${nuevoAdminEmail}?`)) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_URL}/api/superadmin/staff/asignar`, 
+        { email: nuevoAdminEmail.toLowerCase().trim() }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("¡Nuevo SuperAdmin dado de alta!");
+      setNuevoAdminEmail('');
+      // Recargar lista
+      const res = await axios.get(`${API_URL}/api/superadmin/staff`, { headers: { Authorization: `Bearer ${token}` } });
+      setStaff(res.data);
+    } catch (err) {
+      alert("El usuario no existe o ya es admin.");
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-100 relative">
       
@@ -231,56 +232,56 @@ const SuperAdminDashboard = () => {
       )}
       {/* --- FIN DEL MODAL --- */}
       {showEditModal && editData && (
-  <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
-    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-fade-in">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Editar {editData.tipo === 'protectoras' ? 'Protectora' : 'Colonia'}</h2>
-      
-      <div className="space-y-4">
-        <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre</label>
-          <input 
-            type="text" className="w-full p-2 border rounded-lg"
-            value={editData.nombre}
-            onChange={(e) => setEditData({...editData, nombre: e.target.value})}
-          />
-        </div>
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-fade-in">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Editar {editData.tipo === 'protectoras' ? 'Protectora' : 'Colonia'}</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre</label>
+                <input 
+                  type="text" className="w-full p-2 border rounded-lg"
+                  value={editData.nombre}
+                  onChange={(e) => setEditData({...editData, nombre: e.target.value})}
+                />
+              </div>
 
-        {editData.tipo === 'colonias' && (
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Código Postal</label>
-            <input 
-              type="text" className="w-full p-2 border rounded-lg"
-              value={editData.codigo_postal || ''}
-              onChange={(e) => setEditData({...editData, codigo_postal: e.target.value})}
-            />
+              {editData.tipo === 'colonias' && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Código Postal</label>
+                  <input 
+                    type="text" className="w-full p-2 border rounded-lg"
+                    value={editData.codigo_postal || ''}
+                    onChange={(e) => setEditData({...editData, codigo_postal: e.target.value})}
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Estado</label>
+                <select 
+                  className="w-full p-2 border rounded-lg bg-white"
+                  value={editData.estado}
+                  onChange={(e) => setEditData({...editData, estado: e.target.value})}
+                >
+                  <option value="activo">Activo</option>
+                  <option value="archivado">Archivado</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end gap-3">
+              <button onClick={() => setShowEditModal(false)} className="px-4 py-2 text-gray-400 font-bold">Cancelar</button>
+              <button 
+                onClick={confirmarEdicion}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold shadow-lg hover:bg-blue-700 transition"
+              >
+                Guardar Cambios
+              </button>
+            </div>
           </div>
-        )}
-
-        <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Estado</label>
-          <select 
-            className="w-full p-2 border rounded-lg bg-white"
-            value={editData.estado}
-            onChange={(e) => setEditData({...editData, estado: e.target.value})}
-          >
-            <option value="activo">Activo</option>
-            <option value="archivado">Archivado</option>
-          </select>
         </div>
-      </div>
-
-      <div className="mt-8 flex justify-end gap-3">
-        <button onClick={() => setShowEditModal(false)} className="px-4 py-2 text-gray-400 font-bold">Cancelar</button>
-        <button 
-          onClick={confirmarEdicion}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold shadow-lg hover:bg-blue-700 transition"
-        >
-          Guardar Cambios
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
       {/* SIDEBAR */}  
       <aside className="w-64 bg-gray-900 text-white flex flex-col shadow-2xl z-10">
@@ -290,7 +291,6 @@ const SuperAdminDashboard = () => {
         </div>
         
         <nav className="flex-1 p-4 space-y-2">
-          {/* ... (Tus botones de navegación del Sidebar se quedan igual) ... */}
           <button onClick={() => setActiveTab('dashboard')} className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>📊 Métricas (KPIs)</button>
           <button onClick={() => setActiveTab('solicitudes')} className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${activeTab === 'solicitudes' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>
             <span>📝 Solicitudes</span>
@@ -347,7 +347,6 @@ const SuperAdminDashboard = () => {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600 max-w-xs"><p className="line-clamp-2" title={sol.mensaje}>{sol.mensaje}</p></td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center space-x-2">
-                          {/* --- AQUI CAMBIA EL BOTON APROBAR --- */}
                           <button 
                             onClick={() => abrirModalAprobar(sol)}
                             className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition"
@@ -370,150 +369,135 @@ const SuperAdminDashboard = () => {
           </div>
         )}
 
-        {/* PESTAÑA: DASHBOARD Y DEMÁS */}
+        {/* PESTAÑA: DASHBOARD (MÉTRICAS) */}
         {activeTab === 'dashboard' && (
           <div className="animate-fade-in">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Métricas Globales</h1>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
-                <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Usuarios Totales</h3>
-             <p className="text-4xl font-black text-gray-800 mt-2">{loading ? '...' : counts.usuarios_totales}</p>
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500">
-                <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Protectoras Activas</h3>
-                <p className="text-4xl font-black text-gray-800 mt-2">{loading ? '...' : counts.protectoras_activas}</p>
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500">
-                <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Colonias Activas</h3>
-                <p className="text-4xl font-black text-gray-800 mt-2">{loading ? '...' : counts.colonias_activas}</p>
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-400">
-              <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">Usuarios Comunidad</h3>
-                 <p className="text-4xl font-black text-gray-800 mt-2">{loading ? '...' : counts.usuarios_normales}</p>
-              </div>
-            </div>
+            <MetricasPage /> 
           </div>
         )}
-   {/* PESTAÑA: MODERACIÓN DEL TABLÓN */}
+
+        {/* PESTAÑA: MODERACIÓN DEL TABLÓN */}
         {activeTab === 'moderacion' && (
           <div className="animate-fade-in">
-             {/* Llamamos al componente externo para mantener el código limpio */}
             <ModeracionTablonPage />
           </div>
         )}
 
-      {activeTab === 'entidades' && (
-      <div className="animate-fade-in">
-     <div className="flex justify-between items-center mb-6">
-      <h1 className="text-3xl font-bold text-gray-800">Gestión de Entidades</h1>
-      {/* Selector de tipo */}
-      <div className="bg-gray-200 p-1 rounded-lg flex">
-        <button 
-          onClick={() => setFiltroEntidad('protectoras')}
-          className={`px-4 py-2 rounded-md font-bold transition ${filtroEntidad === 'protectoras' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}
-        >🏢 Protectoras</button>
-        <button 
-          onClick={() => setFiltroEntidad('colonias')}
-          className={`px-4 py-2 rounded-md font-bold transition ${filtroEntidad === 'colonias' ? 'bg-white shadow text-purple-600' : 'text-gray-500'}`}
-        >🐱 Colonias</button>
-      </div>
-    </div>
+        {/* PESTAÑA: ENTIDADES */}
+        {activeTab === 'entidades' && (
+          <div className="animate-fade-in">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-3xl font-bold text-gray-800">Gestión de Entidades</h1>
+              {/* Selector de tipo */}
+              <div className="bg-gray-200 p-1 rounded-lg flex">
+                <button 
+                  onClick={() => setFiltroEntidad('protectoras')}
+                  className={`px-4 py-2 rounded-md font-bold transition ${filtroEntidad === 'protectoras' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}
+                >🏢 Protectoras</button>
+                <button 
+                  onClick={() => setFiltroEntidad('colonias')}
+                  className={`px-4 py-2 rounded-md font-bold transition ${filtroEntidad === 'colonias' ? 'bg-white shadow text-purple-600' : 'text-gray-500'}`}
+                >🐱 Colonias</button>
+              </div>
+            </div>
 
-    <div className="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-100">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nombre</th>
-            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
-              {filtroEntidad === 'protectoras' ? 'Admins Responsables' : 'Gestor Principal'}
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Estado</th>
-            <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Acciones</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {listadoMaestro[filtroEntidad].map((item) => (
-            <tr key={item.id} className="hover:bg-gray-50 transition">
-              <td className="px-6 py-4">
-                <div className="font-bold text-gray-800">{item.nombre}</div>
-                <div className="text-xs text-gray-400">{item.id.substring(0,8)}...</div>
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-600">
-                {filtroEntidad === 'protectoras' 
-                  ? `👥 ${item.total_admins} administradores` 
-                  : `📧 ${item.gestor_email}`}
-              </td>
-              <td className="px-6 py-4">
-                <span className={`px-2 py-1 text-xs font-bold rounded-full ${item.estado === 'activo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
-                  {item.estado.toUpperCase()}
-                </span>
-              </td>
-              <td className="px-6 py-4 text-right">
-  <button 
-    onClick={() => abrirModalEdicion(item)}
-    className="text-blue-600 hover:text-blue-900 font-bold text-sm bg-blue-50 px-3 py-1 rounded-md"
-  >
-    Editar
-  </button>
-</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
-)}
-{activeTab === 'staff' && (
-  <div className="animate-fade-in">
-    <h1 className="text-3xl font-bold text-gray-800 mb-2">Gestión de Staff</h1>
-    <p className="text-gray-500 mb-8">Control de accesos de nivel crítico para la plataforma.</p>
+            <div className="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-100">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nombre</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">
+                      {filtroEntidad === 'protectoras' ? 'Admins Responsables' : 'Gestor Principal'}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Estado</th>
+                    <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {(listadoMaestro[filtroEntidad] || []).map((item) => (
+                    <tr key={item.id} className="hover:bg-gray-50 transition">
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-gray-800">{item.nombre}</div>
+                        <div className="text-xs text-gray-400">{item.id.substring(0,8)}...</div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {filtroEntidad === 'protectoras' 
+                          ? `👥 ${item.total_admins} administradores` 
+                          : `📧 ${item.gestor_email}`}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 text-xs font-bold rounded-full ${item.estado === 'activo' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                          {item.estado.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={() => abrirModalEdicion(item)}
+                          className="text-blue-600 hover:text-blue-900 font-bold text-sm bg-blue-50 px-3 py-1 rounded-md"
+                        >
+                          Editar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
-    {/* Formulario de Alta */}
-    <div className="bg-white p-6 rounded-xl shadow-md border border-red-100 mb-8">
-      <h3 className="text-lg font-bold text-gray-800 mb-4">Dar de alta nuevo SuperAdmin</h3>
-      <div className="flex gap-4">
-        <input 
-          type="email" 
-          placeholder="Email del usuario a promover..."
-          className="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-red-500"
-          value={nuevoAdminEmail}
-          onChange={(e) => setNuevoAdminEmail(e.target.value)}
-        />
-        <button 
-          onClick={handlePromoverAdmin}
-          className="bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700 transition shadow-lg"
-        >
-          Asignar Poderes
-        </button>
-      </div>
-      <p className="text-xs text-red-500 mt-3 font-medium">⚠️ Atención: Un SuperAdmin puede borrar datos y gestionar a otros administradores.</p>
-    </div>
+        {/* PESTAÑA: STAFF */}
+        {activeTab === 'staff' && (
+          <div className="animate-fade-in">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Gestión de Staff</h1>
+            <p className="text-gray-500 mb-8">Control de accesos de nivel crítico para la plataforma.</p>
 
-    {/* Tabla de Staff Actual */}
-    <div className="bg-white shadow-xl rounded-xl overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase">Admin Email</th>
-            <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase">Fecha Alta</th>
-            <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase">Rango</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {staff.map(admin => (
-            <tr key={admin.id}>
-              <td className="px-6 py-4 font-bold text-gray-700">{admin.email}</td>
-              <td className="px-6 py-4 text-sm text-gray-500">{new Date(admin.created_at).toLocaleDateString()}</td>
-              <td className="px-6 py-4 text-right">
-                <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-black">SUPERUSER</span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
-)}
+            {/* Formulario de Alta */}
+            <div className="bg-white p-6 rounded-xl shadow-md border border-red-100 mb-8">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">Dar de alta nuevo SuperAdmin</h3>
+              <div className="flex gap-4">
+                <input 
+                  type="email" 
+                  placeholder="Email del usuario a promover..."
+                  className="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-red-500"
+                  value={nuevoAdminEmail}
+                  onChange={(e) => setNuevoAdminEmail(e.target.value)}
+                />
+                <button 
+                  onClick={handlePromoverAdmin}
+                  className="bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700 transition shadow-lg"
+                >
+                  Asignar Poderes
+                </button>
+              </div>
+              <p className="text-xs text-red-500 mt-3 font-medium">⚠️ Atención: asegurese de que el usuario sea confiable antes de asignarle poderes de SuperAdmin.</p>
+            </div>
+
+            {/* Tabla de Staff Actual */}
+            <div className="bg-white shadow-xl rounded-xl overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase">Admin Email</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase">Fecha Alta</th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase">Rango</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {staff.map(admin => (
+                    <tr key={admin.id}>
+                      <td className="px-6 py-4 font-bold text-gray-700">{admin.email}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500">{new Date(admin.created_at).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-black">SUPERUSER</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

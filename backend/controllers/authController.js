@@ -3,6 +3,20 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 
+const validator = require('validator'); 
+const dns = require('dns').promises;    
+
+const validarDominioReal = async (email) => {
+  const dominio = email.split('@')[1];
+  try {
+    // Buscamos registros MX (Mail Exchange) en el DNS del dominio
+    const records = await dns.resolveMx(dominio);
+    return records && records.length > 0;
+  } catch (err) {
+    return false; // Si no hay registros o el dominio no existe
+  }
+};
+
 // MEJORA 1: Usar URLSearchParams para enviar los datos como quiere Google
 const verifyRecaptcha = async (token) => {
   try {
@@ -26,23 +40,34 @@ const register = async (req, res) => {
   const { email, password, recaptchaToken } = req.body;
 
   try {
-    // MEJORA 2: Validar siempre el reCAPTCHA (o al menos mientras testeas)
-    // He quitado el IF de producción para que puedas ver si funciona en local
+    // --- SEGURIDAD 1: reCAPTCHA ---
     if (!recaptchaToken) {
       return res.status(400).json({ message: 'No se recibió el token de seguridad' });
     }
-
     const recaptchaResult = await verifyRecaptcha(recaptchaToken);
-    console.log('Resultado reCAPTCHA:', recaptchaResult);
-
     if (!recaptchaResult.success || recaptchaResult.score < 0.5) {
-      return res.status(400).json({ message: 'Verificación de seguridad fallida. ¿Eres un bot?' });
+      return res.status(400).json({ message: 'Verificación de seguridad fallida.' });
     }
 
-    // --- Lógica de base de datos ---
-    const userExist = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    // --- SEGURIDAD 2: VALIDACIÓN DE FORMATO ---
+    if (!email || !validator.isEmail(email)) {
+      return res.status(400).json({ message: 'El formato del correo no es válido.' });
+    }
+
+    // --- SEGURIDAD 3: NORMALIZACIÓN (Puntos, mayúsculas, etc.) ---
+    const emailLimpio = validator.normalizeEmail(email);
+
+    // --- SEGURIDAD 4: CHEQUEO DE DOMINIO REAL (MX) ---
+    // Esto rebota correos como "inventado@sdsd.com" al instante
+    const esDominioReal = await validarDominioReal(emailLimpio);
+    if (!esDominioReal) {
+      return res.status(400).json({ message: 'El dominio del correo no existe o no puede recibir mensajes.' });
+    }
+
+    // --- Lógica de base de datos usando el EMAIL LIMPIO ---
+    const userExist = await pool.query('SELECT * FROM users WHERE email = $1', [emailLimpio]);
     if (userExist.rows.length > 0) {
-      return res.status(400).json({ message: 'El usuario ya existe' });
+      return res.status(400).json({ message: 'Este correo ya está registrado.' });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -50,7 +75,7 @@ const register = async (req, res) => {
 
     const newUser = await pool.query(
       'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3) RETURNING id, email, role',
-      [email, passwordHash, 'user']
+      [emailLimpio, passwordHash, 'user']
     );
 
     const token = jwt.sign(
@@ -95,12 +120,12 @@ const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.rows[0].id, role: user.rows[0].role },
+      { id: user.rows[0].id, role: user.rows[0].role,plan: user.rows[0].plan },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    res.json({ token, user: { id: user.rows[0].id, email: user.rows[0].email, role: user.rows[0].role } });
+    res.json({ token, user: { id: user.rows[0].id, email: user.rows[0].email, role: user.rows[0].role, plan: user.rows[0].plan } });
 
   } catch (err) {
     console.error('Error en login:', err.message);

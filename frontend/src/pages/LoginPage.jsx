@@ -1,10 +1,13 @@
-// Archivo: frontend/src/pages/LoginPage.jsx
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { executeRecaptcha } = useGoogleReCaptcha();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
 
@@ -15,9 +18,18 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
+    const { email, password } = formData;
+    console.log("Datos que envío:", { email, password });
+    if (!executeRecaptcha) {
+      setError('ReCAPTCHA no está disponible');
+      return;
+    }
     try {
-      const response = await axios.post('http://localhost:3000/api/auth/login', formData);
+      const captchaToken = await executeRecaptcha('login');
+      const response = await axios.post(`${API_URL}/api/auth/login`, {
+        ...formData,
+        recaptchaToken: captchaToken // <--- El backend busca esta clave
+      });
       const { token, user } = response.data;
 
       localStorage.setItem('token', token);

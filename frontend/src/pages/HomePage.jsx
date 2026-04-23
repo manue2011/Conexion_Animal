@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const HomePage = () => {
   const [animales, setAnimales] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,8 +23,8 @@ const HomePage = () => {
       // 1. Sacamos ubicacion del estado
       const { ubicacion, especie, urgent } = filtros; 
       
-      // 2. La añadimos a la URL (quitamos 'nombre' si ya no lo usas)
-      const url = `http://localhost:3000/api/animales/public?ubicacion=${ubicacion}&especie=${especie}&urgent=${urgent}`;
+      // 2. La añadimos a la URL usando API_URL
+      const url = `${API_URL}/api/animales/public?ubicacion=${ubicacion}&especie=${especie}&urgent=${urgent}`;
       
       const response = await axios.get(url);
       setAnimales(response.data);

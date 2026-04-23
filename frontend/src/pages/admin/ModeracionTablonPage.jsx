@@ -1,6 +1,7 @@
-// Archivo: frontend/src/pages/admin/ModeracionTablonPage.jsx
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const ModeracionTablonPage = () => {
   const [posts, setPosts] = useState([]);
@@ -19,7 +20,7 @@ const ModeracionTablonPage = () => {
     try {
       const token = localStorage.getItem('token');
       // Le pasamos el estado que queremos ver por la URL
-      const response = await axios.get(`http://localhost:3000/api/posts/superadmin/moderate?estado=${vistaActual}`, {
+      const response = await axios.get(`${API_URL}/api/posts/superadmin/moderate?estado=${vistaActual}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setPosts(response.data);
@@ -38,7 +39,7 @@ const ModeracionTablonPage = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.patch(
-        `http://localhost:3000/api/posts/superadmin/moderate/${id}`,
+        `${API_URL}/api/posts/superadmin/moderate/${id}`,
         { nuevoEstado },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -54,7 +55,7 @@ const ModeracionTablonPage = () => {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3000/api/posts/superadmin/moderate/${id}`, {
+      await axios.delete(`${API_URL}/api/posts/superadmin/moderate/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       // Lo quitamos de la pantalla

@@ -1,8 +1,9 @@
-// Archivo: frontend/src/pages/RegisterPage.jsx
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const RegisterPage = () => {
   const { executeRecaptcha } = useGoogleReCaptcha();
@@ -45,7 +46,7 @@ const handleSubmit = async (e) => {
     }
 
     // 3. Enviamos al backend exactamente como lo tenías
-    const response = await axios.post('http://localhost:3000/api/auth/register', {
+    const response = await axios.post(`${API_URL}/api/auth/register`, {
       ...formData,
       recaptchaToken // Este es el nombre que espera nuestro controlador
     });
@@ -54,9 +55,10 @@ const handleSubmit = async (e) => {
     setTimeout(() => navigate('/login'), 2000);
 
   } catch (error) {
+    const errorMsg = error.response?.data?.message || 'Error al registrarse';
     setMessage({
       type: 'error',
-      text: error.response?.data?.message || 'Error al registrarse'
+      text: errorMsg
     });
   }
 };
@@ -97,21 +99,6 @@ const handleSubmit = async (e) => {
               required 
             />
           </div>
-
-          {/* Selector de Rol (Solo para pruebas, luego lo quitaremos o ocultaremos) */}
-         {/*  <div>
-            <label className="block text-gray-700">Tipo de Usuario</label>
-            <select 
-              name="role" 
-              className="w-full px-4 py-2 border rounded"
-              onChange={handleChange}
-            >
-              <option value="user">Adoptante (Usuario)</option>
-              <option value="gestor">Gestor de Colonia</option>
-              <option value="admin">Administrador (Protectora)</option>
-            </select>
-          </div> */}
-
           <button 
             type="submit" 
             className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"

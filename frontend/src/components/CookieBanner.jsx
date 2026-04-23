@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-
 const CookieBanner = () => {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -31,7 +30,7 @@ const CookieBanner = () => {
         <div className="text-sm">
           <p>
             🐾 <strong>Conexión Animal</strong> utiliza cookies para mejorar tu experiencia. 
-            Al navegar, aceptas nuestra <a Link to="/privacidad" className="underline text-blue-400">política de privacidad</a>.
+            Al navegar, aceptas nuestra <Link to="/privacidad" className="underline text-blue-400 hover:text-blue-300">política de privacidad</Link>.
           </p>
         </div>
         <div className="flex gap-3">

@@ -1,6 +1,8 @@
-// Archivo: frontend/src/components/AdoptionRequests.jsx
+
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const AdoptionRequests = () => {
   const [solicitudes, setSolicitudes] = useState([]);
@@ -10,7 +12,7 @@ const AdoptionRequests = () => {
   const fetchSolicitudes = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:3000/api/adopciones', {
+      const response = await axios.get(`${API_URL}/api/adopciones`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSolicitudes(response.data);
@@ -31,7 +33,7 @@ const AdoptionRequests = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:3000/api/adopciones/${id}`, 
+      await axios.put(`${API_URL}/api/adopciones/${id}`, 
         { estado: nuevoEstado },
         { headers: { Authorization: `Bearer ${token}` } }
       );

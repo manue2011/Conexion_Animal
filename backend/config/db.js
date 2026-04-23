@@ -3,7 +3,7 @@ const { Pool } = require('pg');
 // Cargar variables de entorno ANTES de nada
 require('dotenv').config(); 
 
-// --- DIAGNÓSTICO (Esto se borrará en producción) ---
+// --- DIAGNÓSTICO
 console.log("Intentando conectar con URL:", process.env.DATABASE_URL ? "URL encontrada " : "URL NO ENCONTRADA ");
 // ---------------------------------------------------
 
