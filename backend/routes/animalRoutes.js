@@ -6,22 +6,25 @@ const {
   updateAnimal, 
   deleteAnimal,
   getPublicAnimals,
-  getAnimalById
+  getAnimalById,
+  getAdoptados // Asegúrate de que esto está bien escrito en el controller
 } = require("../controllers/animalController");
-const { verifyToken } = require("../middleware/authMiddleware");
+
+const { verifyToken, checkAnimalLimit } = require("../middleware/authMiddleware");
 const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
 
-
-
-// --- AQUÍ ES DONDE VAN LAS RUTAS ---
+// --- 1. RUTAS PÚBLICAS (Sin token) ---
+router.get("/adoptados", getAdoptados); // <-- Ponla la primera de todas
 router.get("/public", getPublicAnimals);
 router.get("/public/:id", getAnimalById);
-// GET para obtener animales (pasa por verifyToken y luego al controlador)
+
+// --- 2. RUTAS PRIVADAS (Con token) ---
+// GET para obtener animales de una protectora
 router.get("/", verifyToken, getAnimals); 
-// Ruta pública para la Home (Sin verifyToken)
+
 // POST para crear animal
-router.post("/", verifyToken, upload.single("foto_url"), createAnimal);
+router.post("/", verifyToken, checkAnimalLimit, upload.single("foto_url"), createAnimal);
 
 // PUT y DELETE
 router.put("/:id", verifyToken, updateAnimal);

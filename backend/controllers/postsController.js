@@ -1,35 +1,32 @@
 const pool = require('../config/db');
-
-// ============================================================================
-// 1. CREAR POST (Usuarios, Gestores, Admins)
-// ============================================================================
 const crearPost = async (req, res) => {
-  const { titulo, contenido, categoria, prioridad,codigo_postal} = req.body;
-  const publicador_id = req.user.id; // Viene del token JWT
-  const userRole = req.user.role;    // Viene del token JWT
-  const userPlan = req.user.plan;    // Para el modelo Freemium futuro
+  const { titulo, contenido, categoria, prioridad, codigo_postal } = req.body;
+  const publicador_id = req.user.id;
+  const userRole = req.user.role;
+  const userPlan = req.user.plan;
 
   try {
     let prioridadFinal = 'normal';
 
-    // Lógica de negocio: Solo ciertos usuarios pueden crear posts "destacados"
+    // 1. Lógica de prioridad (Ya la tenías, está perfecta)
     if (prioridad === 'destacado') {
       if (userRole === 'gestor' || userRole === 'admin' || userPlan === 'pro') {
         prioridadFinal = 'destacado';
       }
-      // Si un usuario normal intenta enviarlo como destacado, 
-      // lo forzamos a 'normal' silenciosamente sin romper la app.
     }
+    const estadoInicial = (userPlan === 'pro') ? 'approved' : 'pending';
 
-    // El estado SIEMPRE se fuerza a 'pending' a nivel de backend por seguridad
     const result = await pool.query(
       `INSERT INTO posts (publicador_id, titulo, contenido, categoria, prioridad, estado, codigo_postal) 
-       VALUES ($1, $2, $3, $4, $5, 'pending', $6) RETURNING *`,
-      [publicador_id, titulo, contenido, categoria, prioridadFinal, codigo_postal]
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [publicador_id, titulo, contenido, categoria, prioridadFinal, estadoInicial, codigo_postal]
     );
 
+    const mensajeOk = (estadoInicial === 'approved') 
+      ? "Publicación realizada con éxito." 
+      : "Publicación enviada. Será visible cuando un moderador la apruebe.";
     res.status(201).json({ 
-      message: "Publicación enviada. Será visible cuando un moderador la apruebe.", 
+      message: mensajeOk, 
       post: result.rows[0] 
     });
 
@@ -39,16 +36,14 @@ const crearPost = async (req, res) => {
   }
 };
 
-// ============================================================================
-// 2. OBTENER TABLÓN PÚBLICO (El Escaparate)
-// ============================================================================
 const obtenerTablon = async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT p.id, p.titulo, p.contenido, p.categoria, p.prioridad, p.created_at, p.codigo_postal, 
              u.entidad_solicitada as nombre_autor,
              u.email as autor_email,
-             u.telefono as autor_telefono
+             u.telefono as autor_telefono,
+             u.plan as plan_autor
       FROM posts p
       JOIN users u ON p.publicador_id = u.id
       WHERE p.estado = 'approved'
@@ -61,11 +56,7 @@ const obtenerTablon = async (req, res) => {
   }
 };
 
-// ============================================================================
-// 3. OBTENER POSTS (Pendientes o Aprobados para el Superadmin)
-// ============================================================================
 const obtenerPendientes = async (req, res) => {
-  // Capturamos el estado de la URL (query string)
   const { estado } = req.query; 
   const filtroEstado = estado || 'pending';
 
@@ -86,9 +77,8 @@ const obtenerPendientes = async (req, res) => {
     res.status(500).json({ error: "Error al cargar la cola de moderación" });
   }
 };
-// ============================================================================
-// 4. MODERAR POST (Solo Admins)
-// ============================================================================
+
+// 4. MODERAR POST (Solo superAdmins)
 const moderarPost = async (req, res) => {
   const { id } = req.params;
   const { nuevoEstado } = req.body; // Esperamos 'approved' o 'rejected'

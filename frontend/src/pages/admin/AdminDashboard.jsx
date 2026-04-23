@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -6,6 +6,9 @@ import axios from 'axios';
 import AnimalForm from '../../components/AnimalForm';
 import AnimalList from '../../components/AnimalList';
 import AdoptionRequests from '../../components/AdoptionRequests';
+import SubscriptionStatus from '../../components/SubscriptionStatus'; 
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -28,14 +31,25 @@ const AdminDashboard = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [perfilForm, setPerfilForm] = useState({ descripcion: '', direccion: '', telefono: '' });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
       
-      // Obtenemos info de la protectora
-      const resProt = await axios.get('http://localhost:3000/api/usuarios/mi-protectora', config);
+      // 1. Pedimos la info de la protectora
+      const resProt = await axios.get(`${API_URL}/api/usuarios/mi-protectora`, config);
       setProtectoraInfo(resProt.data);
+      
+      if (resProt.data.plan) {
+        setUser(prev => ({ ...prev, plan: resProt.data.plan }));
+        
+        const localUserData = JSON.parse(localStorage.getItem('user'));
+        if (localUserData && localUserData.plan !== resProt.data.plan) {
+          localUserData.plan = resProt.data.plan;
+          localStorage.setItem('user', JSON.stringify(localUserData));
+        }
+      }
+
       setPerfilForm({
         descripcion: resProt.data.descripcion || '',
         direccion: resProt.data.direccion || '',
@@ -44,12 +58,16 @@ const AdminDashboard = () => {
     } catch (err) {
       console.error("Error cargando dashboard:", err);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
     const token = localStorage.getItem('token');
-    if (!token || !userData) { navigate('/login'); return; }
+    
+    if (!token || !userData) { 
+      navigate('/login'); 
+      return; 
+    } 
     const parsedUser = JSON.parse(userData);
     if (parsedUser.role !== 'admin' && parsedUser.role !== 'superadmin') { 
       navigate('/'); 
@@ -57,13 +75,13 @@ const AdminDashboard = () => {
     }
     setUser(parsedUser);
     fetchData();
-  }, [navigate]);
+  }, [navigate, fetchData]); 
 
   const handleUpdatePerfil = async (e) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:3000/api/usuarios/protectora/${protectoraInfo.id}`, perfilForm, {
+      await axios.put(`${API_URL}/api/usuarios/protectora/${protectoraInfo.id}`, perfilForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIsProfileModalOpen(false);
@@ -84,11 +102,35 @@ const AdminDashboard = () => {
 
   if (!user) return <div className="p-10">Cargando...</div>;
 
-  // --- VISTAS ---
-  const RenderResumen = () => (
-    <div className="animate-fade-in">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">Visión General</h2>
+  // --- LÓGICA DE PETICIONES DE AYUDA ---
+  const handleSubmitNeed = async (e) => {
+    e.preventDefault();
+    if (isSubmittingNeed) return;
+    setIsSubmittingNeed(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_URL}/api/necesidades`, {
+        ...needForm,
+        protectora_id: protectoraInfo.id
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
+      alert(needForm.prioridad === 'urgente' ? '¡Alerta enviada a los voluntarios!' : 'Petición publicada correctamente.');
+      setIsNeedModalOpen(false);
+      setNeedForm({ titulo: '', categoria: 'comida', descripcion: '', prioridad: 'normal' });
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al publicar la petición.');
+    } finally {
+      setIsSubmittingNeed(false);
+    }
+  };
+
+  // --- VISTAS ---
+  // SOLUCIÓN AL BUCLE: Se declara como variable (minúscula y sin función flecha)
+  const renderResumen = (
+    <div className="animate-fade-in">      
       {/* 🚨 AVISO PERFIL INCOMPLETO */}
       {protectoraInfo && (!protectoraInfo.direccion || !protectoraInfo.descripcion) && (
         <div className="bg-orange-100 border-l-4 border-orange-500 p-6 mb-8 rounded-r-lg shadow-sm flex justify-between items-center">
@@ -105,6 +147,10 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      <div className="animate-fade-in">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Visión General</h2>   
+        <SubscriptionStatus /> 
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
           <h3 className="text-gray-500 text-sm">Protectora</h3>
@@ -123,31 +169,7 @@ const AdminDashboard = () => {
       </div>
     </div>
   );
-// --- LÓGICA DE PETICIONES DE AYUDA ---
-  const handleSubmitNeed = async (e) => {
-    e.preventDefault();
-    if (isSubmittingNeed) return;
-    setIsSubmittingNeed(true);
 
-    try {
-      const token = localStorage.getItem('token');
-      // 👇 AQUÍ ESTÁ LA DIFERENCIA: Enviamos protectora_id
-      await axios.post('http://localhost:3000/api/necesidades', {
-        ...needForm,
-        protectora_id: protectoraInfo.id
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      alert(needForm.prioridad === 'urgente' ? '¡Alerta enviada a los voluntarios!' : 'Petición publicada correctamente.');
-      setIsNeedModalOpen(false);
-      setNeedForm({ titulo: '', categoria: 'comida', descripcion: '', prioridad: 'normal' });
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error al publicar la petición.');
-    } finally {
-      setIsSubmittingNeed(false);
-    }
-  };
   return (
     <div className="min-h-screen bg-gray-100 flex">
       <aside className="w-64 bg-slate-800 text-white flex flex-col shadow-xl">
@@ -162,10 +184,13 @@ const AdminDashboard = () => {
           <button onClick={() => setActiveView('solicitudes')} className={`w-full text-left py-3 px-4 rounded transition flex items-center gap-3 ${activeView === 'solicitudes' ? 'bg-blue-600' : 'hover:bg-slate-700 text-gray-300'}`}> 💌 Solicitudes </button>
           <button onClick={() => setIsProfileModalOpen(true)} className="w-full text-left py-3 px-4 rounded transition flex items-center gap-3 hover:bg-slate-700 text-gray-300"> ⚙️ Configuración </button>
           <button onClick={() => setIsNeedModalOpen(true)} className="w-full text-left px-4 py-3 rounded-lg font-bold mt-8 transition shadow-md flex justify-between items-center bg-red-600 hover:bg-red-700 text-white" ><span>🚨 Pedir Ayuda</span></button>
+          <button onClick={() => setActiveView('plan')} className={`w-full text-left py-3 px-4 rounded transition flex items-center gap-3 ${activeView === 'plan' ? 'bg-blue-600' : 'hover:bg-slate-700 text-gray-300'}`}> 💳 Mi Plan </button>  
+          {user.plan === 'pro' && (
+            <button onClick={() => setActiveView('soporte')} className={`w-full text-left py-3 px-4 rounded transition flex items-center gap-3 mt-2 border border-yellow-500/30 ${activeView === 'soporte' ? 'bg-yellow-600 text-white' : 'bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/20'}`}> 
+              🎧 Soporte VIP 24h 
+            </button>
+          )}
         </nav>
-        <div className="p-4 border-t border-slate-700">
-          <button onClick={handleLogout} className="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded font-bold transition"> Cerrar Sesión </button>
-        </div>
       </aside>
 
       <main className="flex-1 p-8 overflow-y-auto h-screen">
@@ -174,13 +199,27 @@ const AdminDashboard = () => {
             {activeView === 'resumen' && 'Dashboard'}
             {activeView === 'animales' && 'Inventario'}
             {activeView === 'solicitudes' && 'Adopciones'}
+            {activeView === 'plan' && 'Suscripción y Límites'}
+            {activeView === 'soporte' && 'Soporte VIP'}
           </h1>
           <div className="text-sm text-gray-500 bg-white px-4 py-2 rounded-full shadow">
             Usuario: <span className="font-bold text-blue-600">{user.email}</span>
+            {user.plan === 'pro' && (
+              <span className="ml-2 inline-flex items-center bg-yellow-100 text-yellow-700 text-[10px] font-black px-2 py-0.5 rounded-full border border-yellow-200 shadow-sm">
+                🛡️ VERIFICADO 24H
+              </span>
+            )}
           </div>
         </header>
 
-        {activeView === 'resumen' && <RenderResumen />}
+        {/* CÓMO SE RENDERIZA LA VARIABLE */}
+        {activeView === 'resumen' && renderResumen}
+        
+        {activeView === 'plan' && (
+          <div className="max-w-4xl mx-auto animate-fade-in">
+            <SubscriptionStatus />
+          </div>
+        )}
         {activeView === 'animales' && (
           <div className="animate-fade-in">
             {!protectoraInfo?.direccion ? (
@@ -199,6 +238,35 @@ const AdminDashboard = () => {
           </div>
         )}
         {activeView === 'solicitudes' && <div className="bg-white p-6 rounded-lg shadow-md"><AdoptionRequests /></div>}
+        
+        {/* VISTA DE SOPORTE VIP */}
+        {activeView === 'soporte' && user.plan === 'pro' && (
+          <div className="max-w-2xl mx-auto animate-fade-in bg-white p-8 rounded-2xl shadow-lg border-t-4 border-blue-600">
+            <div className="flex items-center gap-4 mb-6">
+              <span className="text-4xl">👑</span>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">Centro de Soporte VIP</h2>
+                <p className="text-blue-600 font-medium">Prioridad Máxima Garantizada</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex items-center gap-4">
+                <div className="bg-blue-600 p-2 rounded-lg text-white">📧</div>
+                <div>
+                  <p className="text-xs font-bold text-blue-800 uppercase text-left">Email Prioritario</p>
+                  <p className="text-blue-900 font-medium text-left">conexionanimal2026@outlook.com</p>
+                </div>
+              </div>
+              <div className="p-4 bg-green-50 rounded-xl border border-green-100 flex items-center gap-4">
+                <div className="bg-green-600 p-2 rounded-lg text-white">📱</div>
+                <div>
+                  <p className="text-xs font-bold text-green-800 uppercase text-left">WhatsApp Directo</p>
+                  <p className="text-green-900 font-medium text-left">+34 600 000 000</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* --- MODAL DE CONFIGURACIÓN PROTECTORA --- */}

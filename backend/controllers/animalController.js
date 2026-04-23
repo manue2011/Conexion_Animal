@@ -18,7 +18,7 @@ const createAnimal = async (req, res) => {
 
     let targetColumn, idSubquery;
 
-    // 🚨 IMPORTANTE: Cambiamos $7 por $8 porque 'ubicacion' ocupará el puesto $7
+    //  IMPORTANTE: Cambiamos $7 por $8 porque 'ubicacion' ocupará el puesto $7
     if (userRole === 'admin') {
       targetColumn = 'protectora_id';
       idSubquery = `(SELECT protectora_id FROM protectora_admins WHERE user_id = $8 LIMIT 1)`;
@@ -90,7 +90,7 @@ const getAnimals = async (req, res) => {
   }
 };
 
-// 3. ACTUALIZAR Y 4. BORRAR (Simplificados)
+// 3. ACTUALIZAR Y 4. BORRAR 
 const updateAnimal = async (req, res) => {
   try {
     const { id } = req.params;
@@ -101,7 +101,6 @@ const updateAnimal = async (req, res) => {
     
     if (result.rows.length === 0) return res.status(404).json({ message: "Animal no encontrado" });
     
-    // 🚨 HE BORRADO LO DE LAS COLONIAS DE AQUÍ
     res.json({ message: "Animal actualizado", animal: result.rows[0] });
   } catch (err) {
     res.status(500).json({ message: "Error al actualizar" });
@@ -118,7 +117,7 @@ const deleteAnimal = async (req, res) => {
   }
 };
 const getPublicAnimals = async (req, res) => {
-  const { especie, urgent, ubicacion } = req.query; // Cambiamos 'nombre' por 'ubicacion'
+  const { especie, urgent, ubicacion } = req.query; 
 
   try {
     let query = `
@@ -172,14 +171,26 @@ const getAnimalById = async (req, res) => {
   }
   
 };
+const getAdoptados = async (req, res) => {
+  try {
+    const result = await pool.query(
+      // 👇 HEMOS CAMBIADO updated_at POR created_at 👇
+      "SELECT id, nombre, foto_url FROM animales WHERE estado = 'adoptado' ORDER BY created_at DESC"
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Error en el servidor al obtener adoptados');
+  }
+};
 
-// No olvides añadirla al module.exports:
 module.exports = { 
   createAnimal, 
   getAnimals, 
   updateAnimal, 
   deleteAnimal, 
   getPublicAnimals,
-  getAnimalById
+  getAnimalById,
+  getAdoptados
 };
 

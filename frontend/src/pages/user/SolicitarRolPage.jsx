@@ -2,6 +2,8 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const SolicitarRolPage = () => {
   const navigate = useNavigate();
   
@@ -32,7 +34,7 @@ const SolicitarRolPage = () => {
     try {
       const token = localStorage.getItem('token');
       // 3. Enviamos todos los datos estructurados al backend
-      await axios.post('http://localhost:3000/api/usuarios/solicitar-rol', formData, {
+      await axios.post(`${API_URL}/api/usuarios/solicitar-rol`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

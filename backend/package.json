@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
@@ -12,7 +15,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sendgrid/mail": "^8.1.6",
     "axios": "^1.15.0",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.8.0",
@@ -23,7 +25,10 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
+    "nodemailer": "^8.0.5",
     "pg": "^8.16.3",
+    "resend": "^6.12.2",
+    "stripe": "^22.0.2",
     "validator": "^13.15.35"
   },
   "devDependencies": {

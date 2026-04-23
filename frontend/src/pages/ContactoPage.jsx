@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const ContactoPage = () => {
   const [formData, setFormData] = useState({ nombre: '', email: '', mensaje: '' });
   const [status, setStatus] = useState(null);
@@ -9,7 +11,7 @@ const ContactoPage = () => {
     e.preventDefault();
     setStatus('enviando');
     try {
-      await axios.post('http://localhost:3000/api/contacto', formData);
+      await axios.post(`${API_URL}/api/contacto`, formData);
       setStatus('exito');
       setFormData({ nombre: '', email: '', mensaje: '' });
     } catch (error) {

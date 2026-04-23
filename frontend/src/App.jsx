@@ -21,6 +21,8 @@ import PoliticaPrivacidad from './pages/PoliticaPrivacidad';
 import TerminosCondiciones from './pages/TerminosCondiciones';
 import ContactoPage from './pages/ContactoPage';
 import SobreNosotros from './pages/SobreNosotros';
+import AdoptadosPage from './pages/AdoptadosPage';
+import PlanesPage from './pages/PlanesPage';
 // Páginas Privadas
 import AdminDashboard from './pages/admin/AdminDashboard';
 import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
@@ -46,6 +48,8 @@ function App() {
         <Route path="/terminos" element={<TerminosCondiciones />} />
         <Route path="/contacto" element={<ContactoPage />} />
         <Route path="/sobre-nosotros" element={<SobreNosotros />} />
+        <Route path="/adoptados" element={<AdoptadosPage />} />
+        <Route path="/planes" element={<PlanesPage />} />
         {/* ==============================
             RUTAS DE USUARIO NORMAL
         ============================== */}
