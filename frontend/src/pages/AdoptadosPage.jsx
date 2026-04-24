@@ -11,7 +11,6 @@ const AdoptadosPage = () => {
   useEffect(() => {
     const fetchAdoptados = async () => {
       try {
-        // Asumimos que crearemos esta ruta en el backend en el paso 4
         const response = await axios.get(`${API_URL}/api/animales/adoptados`);
         setAnimales(response.data);
       } catch (error) {
@@ -25,16 +24,17 @@ const AdoptadosPage = () => {
 
   return (
     <div className="min-h-screen bg-green-50/30">
+
       {/* HEADER FINALES FELICES */}
-      <div className="bg-gradient-to-b from-green-600 to-green-700 text-white py-16 px-4 text-center shadow-inner">
-        <span className="text-6xl block mb-4">🏡❤️</span>
-        <h1 className="text-4xl font-black mb-4 tracking-tight">Finales Felices</h1>
-        <p className="text-lg max-w-2xl mx-auto opacity-90 font-medium">
+      <div className="bg-gradient-to-b from-green-600 to-green-700 text-white py-12 md:py-16 px-4 text-center shadow-inner">
+        <span className="text-5xl md:text-6xl block mb-4">🏡❤️</span>
+        <h1 className="text-3xl md:text-4xl font-black mb-4 tracking-tight">Finales Felices</h1>
+        <p className="text-base md:text-lg max-w-2xl mx-auto opacity-90 font-medium">
           Estos peludos ya han encontrado el calor de un hogar gracias a la red de Conexión Animal y sus protectoras.
         </p>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-12">
+      <div className="max-w-6xl mx-auto px-4 py-8 md:py-12">
         {loading ? (
           <div className="flex justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
@@ -46,21 +46,26 @@ const AdoptadosPage = () => {
             <p className="text-gray-500">Pronto llenaremos esta sección de historias felices.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
             {animales.map((animal) => (
               <div key={animal.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative grayscale-[20%] hover:grayscale-0 transition-all duration-500">
-                <div className="h-60 w-full overflow-hidden relative">
-                  <img src={animal.foto_url || 'https://via.placeholder.com/400x300'} alt={animal.nombre} className="w-full h-full object-cover" />
-                  {/* Etiqueta de "ADOPTADO" */}
+                <div className="h-44 sm:h-52 md:h-60 w-full overflow-hidden relative">
+                  <img
+                    src={animal.foto_url || 'https://via.placeholder.com/400x300'}
+                    alt={animal.nombre}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  {/* Etiqueta ADOPTADO al hacer hover */}
                   <div className="absolute inset-0 bg-green-900/40 flex items-center justify-center backdrop-blur-[2px] opacity-0 hover:opacity-100 transition-opacity">
-                    <span className="bg-white text-green-700 font-black px-4 py-2 rounded-lg text-xl uppercase tracking-widest shadow-2xl rotate-[-10deg]">
+                    <span className="bg-white text-green-700 font-black px-3 py-2 rounded-lg text-sm md:text-xl uppercase tracking-widest shadow-2xl rotate-[-10deg]">
                       ¡ADOPTADO!
                     </span>
                   </div>
                 </div>
-                <div className="p-5 text-center">
-                  <h3 className="text-xl font-bold text-gray-800 mb-1">{animal.nombre}</h3>
-                  <p className="text-sm font-medium text-green-600 bg-green-50 inline-block px-3 py-1 rounded-full uppercase">
+                <div className="p-3 md:p-5 text-center">
+                  <h3 className="text-base md:text-xl font-bold text-gray-800 mb-1 truncate">{animal.nombre}</h3>
+                  <p className="text-xs md:text-sm font-medium text-green-600 bg-green-50 inline-block px-2 md:px-3 py-1 rounded-full uppercase">
                     Felizmente en casa
                   </p>
                 </div>
