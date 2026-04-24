@@ -153,7 +153,7 @@ const SuperAdminDashboard = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100 relative">
+   <div className="flex flex-col md:flex-row h-screen bg-gray-100 relative overflow-hidden">
       
       {/* --- MODAL FLOTANTE DE APROBACIÓN --- */}
       {showModal && selectedSolicitud && (
@@ -284,7 +284,7 @@ const SuperAdminDashboard = () => {
       )}
 
       {/* SIDEBAR */}  
-      <aside className="w-64 bg-gray-900 text-white flex flex-col shadow-2xl z-10">
+        <aside className="w-full md:w-64 md:h-screen bg-gray-900 text-white flex flex-col shadow-2xl z-10 shrink-0">
         <div className="p-6 text-center border-b border-gray-800">
           <h2 className="text-2xl font-bold text-yellow-500 mb-1">👑 SuperAdmin</h2>
           <p className="text-xs text-gray-400">Panel de Control Global</p>
