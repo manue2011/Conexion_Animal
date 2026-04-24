@@ -68,9 +68,11 @@ function App() {
         {/* ==============================
             RUTAS DE SUPERADMIN (Solo Tú)
         ============================== */}
-        <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
+        <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
+          <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
            {/* NUEVO: Ruta de moderación */}
           <Route path="/superadmin/moderacion-tablon" element={<ModeracionTablonPage />} />
+        </Route>
 
         {/* ==============================
             RUTAS DE GESTOR (Colonias)
