@@ -7,19 +7,16 @@ const ModeracionTablonPage = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // NUEVO: Controla qué pestaña estamos viendo ('pending' o 'approved')
   const [vistaActual, setVistaActual] = useState('pending');
 
   useEffect(() => {
     fetchPosts();
-  }, [vistaActual]); // Se vuelve a ejecutar si cambias de pestaña
+  }, [vistaActual]);
 
   const fetchPosts = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      // Le pasamos el estado que queremos ver por la URL
       const response = await axios.get(`${API_URL}/api/posts/superadmin/moderate?estado=${vistaActual}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -49,16 +46,13 @@ const ModeracionTablonPage = () => {
     }
   };
 
-  // NUEVA FUNCIÓN: Eliminar definitivamente
   const handleEliminar = async (id) => {
     if (!window.confirm('🚨 ¿PELIGRO! Vas a borrar esta publicación de la base de datos para siempre. ¿Continuar?')) return;
-    
     try {
       const token = localStorage.getItem('token');
       await axios.delete(`${API_URL}/api/posts/superadmin/moderate/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      // Lo quitamos de la pantalla
       setPosts(posts.filter(post => post.id !== id));
     } catch (err) {
       alert("Hubo un error al intentar eliminar la publicación.");
@@ -66,26 +60,26 @@ const ModeracionTablonPage = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-[500px]">
-      
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6 min-h-[500px] w-full">
+
       {/* Cabecera y Pestañas */}
-      <div className="mb-6 border-b border-gray-100 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="mb-6 border-b border-gray-100 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Gestión del Tablón</h2>
           <p className="text-gray-500 text-sm mt-1">Aprueba nuevos posts o elimina los antiguos.</p>
         </div>
 
         {/* SELECTOR DE VISTA */}
-        <div className="flex bg-gray-100 p-1 rounded-lg">
-          <button 
+        <div className="flex bg-gray-100 p-1 rounded-lg self-start sm:self-auto">
+          <button
             onClick={() => setVistaActual('pending')}
-            className={`px-4 py-2 rounded-md font-bold text-sm transition ${vistaActual === 'pending' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-3 py-2 rounded-md font-bold text-sm transition ${vistaActual === 'pending' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Nuevos (Pendientes)
           </button>
-          <button 
+          <button
             onClick={() => setVistaActual('approved')}
-            className={`px-4 py-2 rounded-md font-bold text-sm transition ${vistaActual === 'approved' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-3 py-2 rounded-md font-bold text-sm transition ${vistaActual === 'approved' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
           >
             Públicos (Aprobados)
           </button>
@@ -98,7 +92,9 @@ const ModeracionTablonPage = () => {
       {!loading && posts.length === 0 && !error && (
         <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
           <p className="text-gray-500 font-medium">
-            {vistaActual === 'pending' ? 'No hay publicaciones nuevas para revisar. ¡Todo al día!' : 'No hay publicaciones activas en el tablón en este momento.'}
+            {vistaActual === 'pending'
+              ? 'No hay publicaciones nuevas para revisar. ¡Todo al día!'
+              : 'No hay publicaciones activas en el tablón en este momento.'}
           </p>
         </div>
       )}
@@ -106,38 +102,52 @@ const ModeracionTablonPage = () => {
       {/* Lista de Posts */}
       <div className="grid grid-cols-1 gap-4">
         {posts.map((post) => (
-          <div key={post.id} className={`border rounded-lg p-5 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-gray-50 transition ${vistaActual === 'approved' ? 'border-green-200' : 'border-gray-200'}`}>
-            
-            <div className="flex-1 mb-4 md:mb-0 pr-4 w-full">
-              <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-lg font-bold text-gray-900">{post.titulo}</h3>
-                <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded uppercase">
+          <div
+            key={post.id}
+            className={`border rounded-lg p-4 md:p-5 flex flex-col gap-4 hover:bg-gray-50 transition ${vistaActual === 'approved' ? 'border-green-200' : 'border-gray-200'}`}
+          >
+            {/* INFO DEL POST */}
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <h3 className="text-base md:text-lg font-bold text-gray-900">{post.titulo}</h3>
+                <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded uppercase shrink-0">
                   {post.categoria.replace('_', ' ')}
                 </span>
-                {post.codigo_postal && <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">📍 CP: {post.codigo_postal}</span>}
+                {post.codigo_postal && (
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded shrink-0">
+                    📍 CP: {post.codigo_postal}
+                  </span>
+                )}
               </div>
-              <p className="text-gray-700 text-sm mb-3 bg-white p-3 border border-gray-100 rounded">{post.contenido}</p>
-              <div className="text-xs text-gray-500 flex items-center gap-4">
+              <p className="text-gray-700 text-sm mb-3 bg-white p-3 border border-gray-100 rounded break-words">
+                {post.contenido}
+              </p>
+              <div className="text-xs text-gray-500 flex flex-wrap items-center gap-3">
                 <span>👤 <span className="font-semibold">{post.autor_email}</span></span>
                 <span>📅 {new Date(post.created_at).toLocaleDateString()}</span>
               </div>
             </div>
 
-            {/* BOTONES DE ACCIÓN DINÁMICOS */}
-            <div className="flex flex-wrap gap-2 w-full md:w-auto">
+            {/* BOTONES DE ACCIÓN */}
+            <div className="flex flex-wrap gap-2">
               {vistaActual === 'pending' ? (
                 <>
-                  <button onClick={() => handleModerar(post.id, 'approved')} className="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg font-bold hover:bg-green-700 shadow-sm text-sm">✅ Aprobar</button>
-                  <button onClick={() => handleModerar(post.id, 'rejected')} className="flex-1 bg-white text-gray-600 border border-gray-300 px-3 py-2 rounded-lg font-bold hover:bg-gray-100 shadow-sm text-sm">❌ Rechazar</button>
+                  <button
+                    onClick={() => handleModerar(post.id, 'approved')}
+                    className="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg font-bold hover:bg-green-700 shadow-sm text-sm"
+                  >✅ Aprobar</button>
+                  <button
+                    onClick={() => handleModerar(post.id, 'rejected')}
+                    className="flex-1 bg-white text-gray-600 border border-gray-300 px-3 py-2 rounded-lg font-bold hover:bg-gray-100 shadow-sm text-sm"
+                  >❌ Rechazar</button>
                 </>
               ) : (
-                <>
-                
-                  <button onClick={() => handleModerar(post.id, 'rejected')} className="flex-1 bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg font-bold hover:bg-yellow-200 transition text-sm">🙈 Finalizar y Resolver</button>
-                </>
+                <button
+                  onClick={() => handleModerar(post.id, 'rejected')}
+                  className="flex-1 bg-yellow-100 text-yellow-700 px-3 py-2 rounded-lg font-bold hover:bg-yellow-200 transition text-sm"
+                >🙈 Finalizar y Resolver</button>
               )}
             </div>
-
           </div>
         ))}
       </div>

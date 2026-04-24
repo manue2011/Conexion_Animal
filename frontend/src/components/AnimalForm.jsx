@@ -4,18 +4,16 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const AnimalForm = ({ onSuccess }) => {
-  // 🔑 LA LLAVE: Obtenemos el usuario del localStorage para que el componente sepa quién eres
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  let user = {};
+  try {
+    user = JSON.parse(localStorage.getItem('user') || '{}');
+  } catch {
+    user = {};
+  }
 
   const [formData, setFormData] = useState({
-    nombre: '',
-    descripcion: '',
-    edad: '',
-    especie: '',
-    ubicacion: '', // Importante: debe estar aquí
-    urgent: false
+    nombre: '', descripcion: '', edad: '', especie: '', ubicacion: '', urgent: false
   });
-  
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
@@ -25,52 +23,26 @@ const AnimalForm = ({ onSuccess }) => {
     setFormData({ ...formData, [e.target.name]: value });
   };
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
+  const handleFileChange = (e) => setFile(e.target.files[0]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
-
     try {
       const data = new FormData();
-      data.append('nombre', formData.nombre);
-      data.append('descripcion', formData.descripcion);
-      data.append('edad', formData.edad);
-      data.append('especie', formData.especie);
-      data.append('urgent', formData.urgent);
-      data.append('ubicacion', formData.ubicacion); // Enviamos la ubicación al backend
-      
-      if (file) {
-        data.append('foto_url', file);
-      }
+      Object.entries(formData).forEach(([k, v]) => data.append(k, v));
+      if (file) data.append('foto_url', file);
 
       const token = localStorage.getItem('token');
-
       await axios.post(`${API_URL}/api/animales`, data, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
 
       setMessage({ type: 'success', text: '¡Animal registrado correctamente!' });
-      
-      // Limpiamos todo el formulario incluyendo la ubicación
-      setFormData({ 
-        nombre: '', 
-        descripcion: '', 
-        edad: '', 
-        especie: '', 
-        ubicacion: '', 
-        urgent: false 
-      });
+      setFormData({ nombre: '', descripcion: '', edad: '', especie: '', ubicacion: '', urgent: false });
       setFile(null);
-      
       if (onSuccess) onSuccess();
-
     } catch (error) {
       console.error(error);
       setMessage({ type: 'error', text: 'Error al subir el animal.' });
@@ -80,35 +52,37 @@ const AnimalForm = ({ onSuccess }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h3 className="text-xl font-bold mb-4 text-gray-700">Registrar Nuevo Animal</h3>
-      
+    <div className="bg-white p-4 md:p-6 rounded-xl shadow-md">
+      <h3 className="text-base md:text-xl font-bold mb-4 text-gray-700">Registrar Nuevo Animal</h3>
+
       {message && (
-        <div className={`p-3 mb-4 rounded text-white text-center ${message.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
+        <div className={`p-3 mb-4 rounded-lg text-white text-center text-sm font-medium ${message.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
           {message.text}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+
+    
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre</label>
-            <input 
-              name="nombre" 
-              placeholder="Nombre del animal" 
+            <input
+              name="nombre"
+              placeholder="Nombre del animal"
               value={formData.nombre}
-              onChange={handleChange} 
-              className="border p-2 rounded w-full" 
-              required 
+              onChange={handleChange}
+              className="border border-gray-300 p-2.5 rounded-lg w-full text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              required
             />
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Especie</label>
-            <select 
-              name="especie" 
+            <select
+              name="especie"
               value={formData.especie}
-              onChange={handleChange} 
-              className="border p-2 rounded w-full bg-white outline-none focus:ring-2 focus:ring-blue-500" 
+              onChange={handleChange}
+              className="border border-gray-300 p-2.5 rounded-lg w-full text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
               required
             >
               <option value="" disabled>-- Selecciona --</option>
@@ -122,59 +96,77 @@ const AnimalForm = ({ onSuccess }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input 
-            type="number" 
-            name="edad" 
-            placeholder="Edad (años)" 
-            value={formData.edad}
-            onChange={handleChange} 
-            className="border p-2 rounded w-full" 
-          />
-          <label className="flex items-center space-x-2 border p-2 rounded bg-gray-50 cursor-pointer">
-            <input 
-              type="checkbox" 
-              name="urgent" 
-              checked={formData.urgent} 
-              onChange={handleChange} 
-              className="w-5 h-5 text-red-600"
+    
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Edad (años)</label>
+            <input
+              type="number"
+              name="edad"
+              placeholder="Ej: 3"
+              value={formData.edad}
+              onChange={handleChange}
+              className="border border-gray-300 p-2.5 rounded-lg w-full text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <span className="text-red-600 font-bold">¿Urgente?</span>
-          </label>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Prioridad</label>
+            <label className="flex items-center gap-2 border border-gray-300 p-2.5 rounded-lg bg-gray-50 cursor-pointer h-[42px]">
+              <input
+                type="checkbox"
+                name="urgent"
+                checked={formData.urgent}
+                onChange={handleChange}
+                className="w-4 h-4 text-red-600 accent-red-500"
+              />
+              <span className="text-red-600 font-bold text-sm">¿Urgente?</span>
+            </label>
+          </div>
         </div>
 
-        <textarea 
-          name="descripcion" 
-          placeholder="Descripción, historia..." 
-          value={formData.descripcion}
-          onChange={handleChange} 
-          className="border p-2 rounded w-full h-24" 
-        />
+        {/* DESCRIPCIÓN */}
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Descripción</label>
+          <textarea
+            name="descripcion"
+            placeholder="Historia, comportamiento..."
+            value={formData.descripcion}
+            onChange={handleChange}
+            className="border border-gray-300 p-2.5 rounded-lg w-full h-24 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          />
+        </div>
 
-        {/* 📍 UBICACIÓN: Ahora 'user' ya está definido arriba y no dará error */}
+       
         {(user?.role === 'admin' || user?.role === 'superadmin') && (
-          <div className="mb-4">
+          <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">📍 Ubicación</label>
-            <input 
-              type="text" 
-              name="ubicacion" 
-              placeholder="Ciudad o Provincia" 
+            <input
+              type="text"
+              name="ubicacion"
+              placeholder="Ciudad o Provincia"
               value={formData.ubicacion}
-              onChange={handleChange} 
-              className="w-full border border-gray-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              required={user?.role === 'admin'} 
+              onChange={handleChange}
+              className="border border-gray-300 p-2.5 rounded-lg w-full text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              required={user?.role === 'admin'}
             />
           </div>
         )}
 
-        <div className="border-2 border-dashed border-gray-300 p-4 text-center rounded">
-          <input type="file" onChange={handleFileChange} className="block w-full text-sm text-slate-500"/>
+      
+        <div className="border-2 border-dashed border-gray-300 p-3 md:p-4 rounded-lg text-center">
+          <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Foto</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="block w-full text-xs md:text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
         </div>
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={loading}
-          className={`w-full py-2 px-4 rounded text-white font-bold transition ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+          className={`w-full py-3 px-4 rounded-lg text-white font-bold text-sm transition-all active:scale-95 ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
         >
           {loading ? 'Subiendo...' : 'Guardar Animal'}
         </button>
