@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const db = require('./config/db'); // Importamos la conexión
+const db = require('./config/db'); 
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
@@ -17,18 +17,27 @@ const necesidadesRoutes = require('./routes/necesidadesRoutes');
 const contactoRoutes = require('./routes/contactoRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 
-// --- CREAMOS LA APP ---
 const app = express();
 
 app.set('trust proxy', 1);
 app.use(helmet());
 
-// 2. MIDDLEWARES GLOBALES
+const allowedOrigins = [
+  'http://localhost:5173',                       
+  'https://conexion-animal-bice.vercel.app',
+  process.env.FRONTEND_URL,                    
+].filter(Boolean); 
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Bloqueado por CORS: El origen ' + origin + ' no está permitido.'));
+    }
+  },
   credentials: true
 }));
-
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -48,7 +57,6 @@ app.use('/api/auth/register', authLimiter);
 app.use('/api/subscriptions/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json()); 
 
-// 3. USO DE LAS RUTAS DE LA API (Todas agrupadas)
 app.use('/api/colonias', coloniaRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/usuarios', userRoutes);
@@ -60,7 +68,6 @@ app.use('/api/necesidades', necesidadesRoutes);
 app.use('/api/contacto', contactoRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 
-// 4. RUTA DE PRUEBA (Health Check)
 app.get('/health', async (req, res) => {
   try {
     const result = await db.query('SELECT NOW()');

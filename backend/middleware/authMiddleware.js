@@ -2,7 +2,7 @@ const pool = require('../config/db')
 const jwt = require('jsonwebtoken');
 
 // 1. Verificar si el usuario está logueado (tiene Token)
-const verifyToken = (req, res, next) => {
+const verifyToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -13,6 +13,21 @@ const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+const result = await pool.query(
+      'SELECT id, role, estado FROM users WHERE id = $1',
+      [decoded.id]
+    );
+
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(401).json({ message: 'Usuario no encontrado.' });
+    }
+
+    if (user.estado === 'archivado') {
+      return res.status(403).json({ message: 'Tu cuenta ha sido suspendida. Contacta con el administrador.' });
+    }
+
     req.user = decoded; 
     next(); 
   } catch (err) {
@@ -96,5 +111,5 @@ const checkAnimalLimit = async (req, res, next) => {
 };
 
 
-module.exports = { verifyToken, verifyAdmin, verifySuperAdmin, verifyGestor, isGestor,checkAnimalLimit };
+module.exports = { verifyToken, verifyAdmin, verifySuperAdmin, verifyGestor, isGestor,checkAnimalLimit};
 

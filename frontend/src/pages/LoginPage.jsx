@@ -43,7 +43,6 @@ const LoginPage = () => {
         navigate('/');
       }
 
-      window.location.reload();
     } catch (err) {
       setError(err.response?.data?.message || 'Error al iniciar sesión');
     }
@@ -76,6 +75,7 @@ const LoginPage = () => {
               onChange={handleChange}
               required
             />
+             <p className="text-[11px] text-gray-400 mt-1.5 ml-1">⚠️ El sistema distingue entre mayúsculas y minúsculas.</p>
           </div>
 
           <div>

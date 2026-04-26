@@ -73,6 +73,21 @@ const Navbar = () => {
               </button>
               {isDropdownOpen && (
                 <div className="absolute left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
+                  
+                  {/* NUEVO: Mis Solicitudes movido aquí si es 'user' */}
+                  {isLoggedIn && user.role === 'user' && (
+                    <>
+                      <Link to="/mis-solicitudes" onClick={() => setIsDropdownOpen(false)} className="flex items-start gap-3 px-4 py-3 hover:bg-blue-50 transition-colors group">
+                        <span className="text-xl group-hover:scale-110 transition-transform">📋</span>
+                        <div>
+                          <p className="text-sm font-bold text-gray-800 group-hover:text-blue-700">Mis Solicitudes</p>
+                          <p className="text-xs text-gray-500">Ver estado de mis adopciones</p>
+                        </div>
+                      </Link>
+                      <div className="border-t border-gray-100 my-1" />
+                    </>
+                  )}
+
                   <Link to="/adoptados" onClick={() => setIsDropdownOpen(false)} className="flex items-start gap-3 px-4 py-3 hover:bg-green-50 transition-colors group">
                     <span className="text-xl group-hover:scale-110 transition-transform">🏡</span>
                     <div>
@@ -115,14 +130,9 @@ const Navbar = () => {
                     </Link>
                   )}
                   {user.role === 'user' && (
-                    <>
-                      <Link to="/mis-solicitudes" className="text-gray-600 hover:text-blue-600 font-semibold px-2 py-1.5 text-sm whitespace-nowrap hover:bg-gray-50 rounded-lg transition" title="Mis Solicitudes">
-                        📋
-                      </Link>
-                      <Link to="/solicitar-rol" className="bg-green-100 text-green-800 font-bold px-2.5 py-1.5 rounded-lg text-xs hover:bg-green-200 transition whitespace-nowrap">
-                        🤝 Colaborar
-                      </Link>
-                    </>
+                    <Link to="/solicitar-rol" className="bg-green-100 text-green-800 font-bold px-2.5 py-1.5 rounded-lg text-xs hover:bg-green-200 transition whitespace-nowrap">
+                      🤝 Colaborar
+                    </Link>
                   )}
                   <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition">
                     Salir
@@ -169,6 +179,12 @@ const Navbar = () => {
             <Link to="/contacto" onClick={closeMobileMenu} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition text-sm">✉️ Contacto</Link>
             <Link to="/sobre-nosotros" onClick={closeMobileMenu} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition text-sm">🤝 Conócenos</Link>
             <Link to="/tablon" onClick={closeMobileMenu} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 font-semibold hover:bg-orange-50 hover:text-orange-600 transition text-sm">📢 Tablón de Ayuda</Link>
+            
+            {/* NUEVO: Mis Solicitudes movido aquí si es 'user' (Vista Móvil) */}
+            {isLoggedIn && user.role === 'user' && (
+              <Link to="/mis-solicitudes" onClick={closeMobileMenu} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-blue-50 hover:text-blue-700 transition text-sm">📋 Mis Solicitudes</Link>
+            )}
+
             <Link to="/adoptados" onClick={closeMobileMenu} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-green-50 hover:text-green-700 transition text-sm">🏡 Finales Felices</Link>
             <Link to="/planes" onClick={closeMobileMenu} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-purple-50 hover:text-purple-700 transition text-sm">⭐ Planes Protectoras</Link>
           </div>
@@ -192,14 +208,9 @@ const Navbar = () => {
                   </Link>
                 )}
                 {user.role === 'user' && (
-                  <>
-                    <Link to="/mis-solicitudes" onClick={closeMobileMenu} className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition text-sm">
-                      📋 Mis Solicitudes
-                    </Link>
-                    <Link to="/solicitar-rol" onClick={closeMobileMenu} className="flex items-center gap-2 w-full bg-green-100 text-green-800 font-bold px-3 py-2.5 rounded-lg text-sm hover:bg-green-200 transition">
-                      🤝 Trabaja con nosotros
-                    </Link>
-                  </>
+                  <Link to="/solicitar-rol" onClick={closeMobileMenu} className="flex items-center gap-2 w-full bg-green-100 text-green-800 font-bold px-3 py-2.5 rounded-lg text-sm hover:bg-green-200 transition">
+                    🤝 Trabaja con nosotros
+                  </Link>
                 )}
                 <button onClick={() => { handleLogout(); closeMobileMenu(); }} className="w-full bg-red-500 hover:bg-red-600 text-white font-bold px-3 py-2.5 rounded-lg text-sm transition">
                   Salir

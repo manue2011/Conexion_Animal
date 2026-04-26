@@ -1,6 +1,19 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const PlanesPage = () => {
+  // Comprobamos si el usuario ya está logueado
+  const userString = localStorage.getItem('user');
+  const user = userString ? JSON.parse(userString) : null;
+
+  // Estado para mostrar el aviso a los usuarios logueados
+  const [aviso, setAviso] = useState('');
+
+  const handlePlanClick = (e) => {
+    e.preventDefault();
+    setAviso(`Tu cuenta actual es de tipo '${user.role.toUpperCase()}'. Estos planes son exclusivos para perfiles de Protectora. Si representas a una, ve a la sección de Contacto para actualizar tu cuenta.`);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-10 md:py-16">
       <div className="max-w-7xl mx-auto px-4">
@@ -13,6 +26,13 @@ const PlanesPage = () => {
             <span className="font-bold text-blue-600">Las colonias felinas siempre son 100% gratuitas.</span>
           </p>
         </div>
+
+        {/* --- MENSAJE DE AVISO SI EL USUARIO LOGUEADO HACE CLIC --- */}
+        {aviso && (
+          <div className="max-w-2xl mx-auto mb-8 bg-blue-50 border border-blue-200 text-blue-800 px-6 py-4 rounded-xl text-center text-sm md:text-base animate-fade-in">
+            <strong>⚠️ Atención:</strong> {aviso}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
 
@@ -33,9 +53,20 @@ const PlanesPage = () => {
               <li className="flex items-center gap-3 text-gray-400"><span className="text-gray-300">✗</span> Sin soporte prioritario</li>
               <li className="flex items-center gap-3 text-gray-400"><span className="text-gray-300">✗</span> Sin insignia de verificación</li>
             </ul>
-            <Link to="/register" className="w-full block text-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 rounded-xl transition-colors text-sm md:text-base">
-              Empezar Gratis
-            </Link>
+            
+            {/* LÓGICA DEL BOTÓN FREE */}
+            {user ? (
+              <button 
+                onClick={handlePlanClick} 
+                className="w-full block text-center bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold py-3 rounded-xl transition-colors text-sm md:text-base"
+              >
+                Solo para Protectoras
+              </button>
+            ) : (
+              <Link to="/register" className="w-full block text-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 rounded-xl transition-colors text-sm md:text-base">
+                Empezar Gratis
+              </Link>
+            )}
           </div>
 
           {/* PLAN PRO */}
@@ -58,9 +89,20 @@ const PlanesPage = () => {
               <li className="flex items-center gap-3 text-blue-100"><span className="text-yellow-400 font-bold">✓</span> Insignia de Protectora Verificada</li>
               <li className="flex items-center gap-3 text-blue-100"><span className="text-yellow-400 font-bold">✓</span> Soporte VIP por WhatsApp 24/7</li>
             </ul>
-            <Link to="/register" className="w-full block text-center bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-yellow-950 font-black py-3 rounded-xl transition-all shadow-lg hover:shadow-yellow-500/20 relative z-10 text-sm md:text-base">
-              Quiero ser PRO
-            </Link>
+            
+            {/* LÓGICA DEL BOTÓN PRO */}
+            {user ? (
+              <button 
+                onClick={handlePlanClick} 
+                className="w-full block text-center bg-gray-800 text-gray-400 font-black py-3 rounded-xl transition-all shadow-lg relative z-10 text-sm md:text-base border border-gray-700 hover:bg-gray-700"
+              >
+                Solo para Protectoras
+              </button>
+            ) : (
+              <Link to="/register" className="w-full block text-center bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-yellow-950 font-black py-3 rounded-xl transition-all shadow-lg hover:shadow-yellow-500/20 relative z-10 text-sm md:text-base">
+                Quiero ser PRO
+              </Link>
+            )}
           </div>
 
         </div>

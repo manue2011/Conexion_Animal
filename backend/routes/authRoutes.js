@@ -1,12 +1,11 @@
-// Archivo: backend/routes/authRoutes.js
 const router = require('express').Router();
-const { register, login } = require('../controllers/authController');
+const { register, verifyEmail, login, resendPin} = require('../controllers/authController');
 
-// Definimos las rutas del plan:
-// POST /api/auth/register
+
 router.post('/register', register);
+router.post('/verify-email', verifyEmail); 
+router.post('/resend-pin', resendPin);
 
-// POST /api/auth/login
 router.post('/login', login);
 
 module.exports = router;
