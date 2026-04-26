@@ -273,5 +273,34 @@ const obtenerUsuariosPro = async (req, res) => {
 };
 
 
+// superadminController.js — añade estas dos funciones
 
-module.exports = { getPendingRequests, getEntidadesExistentes, procesarSolicitud, obtenerMetricasGlobales, obtenerListadoEntidades, actualizarEntidad, obtenerStaff, asignarSuperAdmin, obtenerUsuariosPro };
+const getUsuarios = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, email, role, estado, created_at 
+       FROM users 
+       ORDER BY created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error al obtener usuarios' });
+  }
+};
+
+const toggleBanUsuario = async (req, res) => {
+  const { id } = req.params;
+  const { estado } = req.body; 
+  try {
+    await pool.query(
+      `UPDATE users SET estado = $1 WHERE id = $2 AND role != 'superadmin'`,
+      [estado, id]
+    );
+    res.json({ message: `Usuario ${estado} correctamente.` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error al actualizar estado del usuario' });
+  }
+};
+module.exports = { getPendingRequests, getEntidadesExistentes, procesarSolicitud, obtenerMetricasGlobales, obtenerListadoEntidades, actualizarEntidad, obtenerStaff, asignarSuperAdmin, obtenerUsuariosPro, getUsuarios, toggleBanUsuario };

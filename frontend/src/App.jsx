@@ -1,6 +1,7 @@
 // Archivo: frontend/src/App.jsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
+import axios from 'axios'; 
 // Componentes
 import Navbar from './components/Navbar'; 
 import ProtectedRoute from './components/ProtectedRoute';
@@ -27,6 +28,29 @@ import PlanesPage from './pages/PlanesPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
 import ColoniaDashboard from './pages/admin/ColoniaDashboard'; 
+
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 403 && 
+        error.response?.data?.message?.includes('suspendida')) {
+      
+      // ✅ Si estamos en /login, NO hacemos nada — dejamos que LoginPage muestre el error
+      if (window.location.pathname === '/login') {
+        return Promise.reject(error);
+      }
+
+      alert('⛔ Tu cuenta ha sido suspendida. Contacta con el administrador.');
+      
+      setTimeout(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }, 3000);
+    }
+    return Promise.reject(error);
+  }
+);
 
 function App() {
   return (
