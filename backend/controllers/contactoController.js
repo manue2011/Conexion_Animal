@@ -1,11 +1,10 @@
 const nodemailer = require('nodemailer');
 
-// 1. Configuramos el transportador con GMAIL
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // Atajo oficial para Gmail
+  service: 'gmail', 
   auth: {
-    user: process.env.EMAIL_USER, // conexionanimal2026@gmail.com
-    pass: process.env.EMAIL_PASS  // La contraseña de 16 letras (Contraseña de aplicación)
+    user: process.env.EMAIL_USER, 
+    pass: process.env.EMAIL_PASS  
   }
 });
 
@@ -14,14 +13,11 @@ const enviarContacto = async (req, res) => {
 
   try {
     await transporter.sendMail({
-      // "from" tiene que ser tu propio correo de Gmail
       from: `"Web Conexión Animal" <${process.env.EMAIL_USER}>`, 
       
-      // "to" eres tú mismo, para recibir las consultas de los usuarios
       to: process.env.EMAIL_USER, 
       
-      // "replyTo" es el email de la persona que escribió en la web.
-      // Si le das a "Responder" en Gmail, le contestarás directamente a él.
+
       replyTo: email, 
       
       subject: `Nuevo mensaje de contacto: ${nombre}`,

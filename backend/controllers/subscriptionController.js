@@ -21,8 +21,6 @@ const getSubscriptionStatus = async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // 2. CONTEO DE MENSAJES (Para todos)
-    // Usamos userId porque en tu SQL 'publicador_id' es el ID del usuario
     const postsCount = await pool.query(
       "SELECT COUNT(*)::INT FROM posts WHERE publicador_id = $1 AND estado != 'rejected'",
       [userId] 
@@ -48,9 +46,9 @@ const getSubscriptionStatus = async (req, res) => {
             max: null,
             percentage: 0
           },
-          messages: { // <--- AHORA SÍ SE INCLUYE EN COLONIAS
+          messages: { 
             used: usedPosts,
-            max: null, // O el límite que quieras para colonias
+            max: null, 
             percentage: 0
           }
         },
@@ -59,7 +57,7 @@ const getSubscriptionStatus = async (req, res) => {
       });
     }
 
-    // CASO B: PROTECTORAS (Admins)
+   
     const isPro = user.plan === 'pro';
     let animalCount = 0;
 
