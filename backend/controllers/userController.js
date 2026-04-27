@@ -124,7 +124,7 @@ const updateProtectora = async (req, res) => {
   }
 };
 
-// OBTENER TODAS LAS COLONIAS PÚBLICAS (Para la web)
+
 const getPublicColonias = async (req, res) => {
   try {
     // Solo mostramos las colonias activas

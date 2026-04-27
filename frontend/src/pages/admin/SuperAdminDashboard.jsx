@@ -27,48 +27,45 @@ const SuperAdminDashboard = () => {
   const [filtroRol, setFiltroRol] = useState('todos');
 
   useEffect(() => {
-  const fetchDatos = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
+    const fetchDatos = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      // Estas 4 rutas ya existen → en un solo bloque
-      const [resSolicitudes, resEntidades, resMaestro, resStaff] = await Promise.all([
-        axios.get(`${API_URL}/api/superadmin/solicitudes`, config),
-        axios.get(`${API_URL}/api/superadmin/entidades-existentes`, config),
-        axios.get(`${API_URL}/api/superadmin/entidades-maestro`, config),
-        axios.get(`${API_URL}/api/superadmin/staff`, config),
-      ]);
+        const [resSolicitudes, resEntidades, resMaestro, resStaff] = await Promise.all([
+          axios.get(`${API_URL}/api/superadmin/solicitudes`, config),
+          axios.get(`${API_URL}/api/superadmin/entidades-existentes`, config),
+          axios.get(`${API_URL}/api/superadmin/entidades-maestro`, config),
+          axios.get(`${API_URL}/api/superadmin/staff`, config),
+        ]);
 
-      setSolicitudes(resSolicitudes.data);
-      setEntidades(resEntidades.data);
-      setListadoMaestro(resMaestro.data);
-      setStaff(resStaff.data);
+        setSolicitudes(resSolicitudes.data);
+        setEntidades(resEntidades.data);
+        setListadoMaestro(resMaestro.data);
+        setStaff(resStaff.data);
 
-    } catch (err) {
-      console.error('Error al cargar datos:', err);
-      setError('Hubo un problema al cargar los datos del servidor.');
-    } finally {
-      setLoading(false);
-    }
-  };
+      } catch (err) {
+        console.error('Error al cargar datos:', err);
+        setError('Hubo un problema al cargar los datos del servidor.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Ruta de usuarios separada para que si no existe aún no rompa todo
-  const fetchUsuarios = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const resUsuarios = await axios.get(`${API_URL}/api/superadmin/usuarios`, config);
-      setUsuariosList(resUsuarios.data);
-    } catch (err) {
-      console.warn('Ruta /usuarios no disponible aún:', err.message);
-      // No mostramos error al usuario, simplemente la lista quedará vacía
-    }
-  };
+    const fetchUsuarios = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const resUsuarios = await axios.get(`${API_URL}/api/superadmin/usuarios`, config);
+        setUsuariosList(resUsuarios.data);
+      } catch (err) {
+        console.warn('Ruta /usuarios no disponible aún:', err.message);
+      }
+    };
 
-  fetchDatos();
-  fetchUsuarios();
-}, []);
+    fetchDatos();
+    fetchUsuarios();
+  }, []);
 
   const handleRechazar = async (id) => {
     if (!window.confirm('¿Seguro que quieres rechazar esta solicitud?')) return;
@@ -154,33 +151,34 @@ const SuperAdminDashboard = () => {
     }
   };
 
-    // NUEVO: Función para banear o reactivar usuario
- const toggleBanUsuario = async (userId, currentStatus) => {
-  const accion = currentStatus === 'archivado' ? 'reactivar' : 'archivar';
-  if (!window.confirm(`¿Estás seguro de que quieres ${accion} a este usuario?`)) return;
+  const toggleBanUsuario = async (userId, currentStatus) => {
+    const accion = currentStatus === 'archivado' ? 'reactivar' : 'archivar';
+    if (!window.confirm(`¿Estás seguro de que quieres ${accion} a este usuario?`)) return;
 
-  try {
-    const token = localStorage.getItem('token');
-    await axios.put(`${API_URL}/api/superadmin/usuarios/${userId}/ban`,
-      { estado: currentStatus === 'archivado' ? 'activo' : 'archivado' }, 
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${API_URL}/api/superadmin/usuarios/${userId}/ban`,
+        { estado: currentStatus === 'archivado' ? 'activo' : 'archivado' }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    setUsuariosList(usuariosList.map(u =>
-      u.id === userId ? { ...u, estado: currentStatus === 'archivado' ? 'activo' : 'archivado' } : u 
-    ));
+      setUsuariosList(usuariosList.map(u =>
+        u.id === userId ? { ...u, estado: currentStatus === 'archivado' ? 'activo' : 'archivado' } : u 
+      ));
 
-    alert(`Usuario ${accion}do correctamente.`);
-  } catch (err) {
-    console.error(err);
-    alert(`Error al ${accion} al usuario.`);
-  }
-};
-const usuariosFiltrados = usuariosList.filter(u => {
+      alert(`Usuario ${accion}do correctamente.`);
+    } catch (err) {
+      console.error(err);
+      alert(`Error al ${accion} al usuario.`);
+    }
+  };
+
+  const usuariosFiltrados = usuariosList.filter(u => {
     const matchSearch = u.email.toLowerCase().includes(searchUsuario.toLowerCase());
     const matchRol = filtroRol === 'todos' || u.role === filtroRol;
     return matchSearch && matchRol;
   });
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100 w-full overflow-x-hidden">
 
@@ -268,10 +266,9 @@ const usuariosFiltrados = usuariosList.filter(u => {
             <span>📝 Solicitudes</span>
             {solicitudes.length > 0 && <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow">{solicitudes.length}</span>}
           </button>
-                    <button onClick={() => setActiveTab('usuarios')} className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${activeTab === 'usuarios' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>
+          <button onClick={() => setActiveTab('usuarios')} className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${activeTab === 'usuarios' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>
             <span>👥 Usuarios</span>
           </button>
-
           <button onClick={() => setActiveTab('moderacion')} className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'moderacion' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>⚖️ Moderación Foro</button>
           <button onClick={() => setActiveTab('entidades')} className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'entidades' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>🏢 Protectoras / Colonias</button>
           <button onClick={() => setActiveTab('staff')} className={`w-full flex items-center px-4 py-3 rounded-lg transition ${activeTab === 'staff' ? 'bg-red-700 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>🔑 Gestión Staff</button>
@@ -291,7 +288,6 @@ const usuariosFiltrados = usuariosList.filter(u => {
 
             {error && <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6 border border-red-200">{error}</div>}
 
-            {/* TABLA — solo desktop */}
             <div className="hidden md:block bg-white shadow-lg rounded-xl border border-gray-100 overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -332,7 +328,6 @@ const usuariosFiltrados = usuariosList.filter(u => {
               </table>
             </div>
 
-            {/* TARJETAS — solo móvil */}
             <div className="md:hidden space-y-4">
               {loading ? (
                 <div className="text-center py-10 text-gray-500 animate-pulse">Cargando solicitudes...</div>
@@ -391,7 +386,6 @@ const usuariosFiltrados = usuariosList.filter(u => {
               </div>
             </div>
 
-            {/* TABLA — solo desktop */}
             <div className="hidden md:block bg-white shadow-xl rounded-xl overflow-x-auto border border-gray-100">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -424,7 +418,6 @@ const usuariosFiltrados = usuariosList.filter(u => {
               </table>
             </div>
 
-            {/* TARJETAS — solo móvil */}
             <div className="md:hidden space-y-4">
               {(listadoMaestro[filtroEntidad] || []).length === 0 ? (
                 <div className="text-center bg-white rounded-xl shadow p-8">
@@ -450,6 +443,7 @@ const usuariosFiltrados = usuariosList.filter(u => {
             </div>
           </div>
         )}
+
         {/* NUEVA PESTAÑA: GESTIÓN DE USUARIOS (BANEOS) */}
         {activeTab === 'usuarios' && (
           <div className="animate-fade-in">
@@ -481,8 +475,8 @@ const usuariosFiltrados = usuariosList.filter(u => {
               </select>
             </div>
 
-            {/* Tabla de Usuarios */}
-            <div className="bg-white shadow-xl rounded-xl overflow-x-auto border border-gray-100">
+            {/* TABLA DE USUARIOS — solo desktop */}
+            <div className="hidden md:block bg-white shadow-xl rounded-xl overflow-x-auto border border-gray-100">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -544,8 +538,49 @@ const usuariosFiltrados = usuariosList.filter(u => {
                 </tbody>
               </table>
             </div>
+
+            {/* TARJETAS DE USUARIOS — solo móvil */}
+            <div className="md:hidden space-y-4">
+              {usuariosFiltrados.length === 0 ? (
+                <div className="text-center bg-white rounded-xl shadow p-8">
+                  <p className="text-gray-500">No se encontraron usuarios con ese filtro.</p>
+                </div>
+              ) : (
+                usuariosFiltrados.map((u) => (
+                  <div key={u.id} className={`bg-white rounded-xl shadow-md p-4 border border-gray-100 space-y-3 ${u.estado === 'archivado' ? 'bg-red-50' : ''}`}>
+                    <div>
+                      <p className={`font-bold text-sm ${u.estado === 'archivado' ? 'text-red-700 line-through' : 'text-gray-800'}`}>{u.email}</p>
+                      <p className="text-xs text-gray-400 mt-1">Creado: {new Date(u.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className={`px-2 py-1 text-xs font-bold rounded-md uppercase 
+                        ${u.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
+                          u.role === 'gestor' ? 'bg-green-100 text-green-800' : 
+                          u.role === 'superadmin' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-600'}`}>
+                        {u.role}
+                      </span>
+                      {u.estado === 'archivado' ? (
+                        <span className="px-2 py-1 text-xs font-bold bg-red-600 text-white rounded-full">⛔ Archivado</span>
+                      ) : (
+                        <span className="px-2 py-1 text-xs font-bold bg-green-100 text-green-700 rounded-full">✅ Activo</span>
+                      )}
+                    </div>
+                    <div className="pt-2">
+                      {u.role === 'superadmin' ? (
+                        <span className="text-xs text-gray-400 italic block text-center">Cuenta Inmune</span>
+                      ) : u.estado === 'archivado' ? (
+                        <button onClick={() => toggleBanUsuario(u.id, u.estado)} className="w-full text-green-600 hover:bg-green-100 font-bold text-sm bg-white border border-green-200 px-3 py-2 rounded-lg transition">Reactivar Cuenta</button>
+                      ) : (
+                        <button onClick={() => toggleBanUsuario(u.id, u.estado)} className="w-full text-red-600 hover:bg-red-600 hover:text-white font-bold text-sm bg-red-50 border border-red-200 px-3 py-2 rounded-lg transition">Archivar Usuario</button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )}
+
         {/* PESTAÑA: STAFF */}
         {activeTab === 'staff' && (
           <div className="animate-fade-in">
@@ -567,7 +602,6 @@ const usuariosFiltrados = usuariosList.filter(u => {
               <p className="text-xs text-red-500 mt-3 font-medium">⚠️ Atención: asegúrese de que el usuario sea confiable antes de asignarle poderes de SuperAdmin.</p>
             </div>
 
-            {/* TABLA staff — solo desktop */}
             <div className="hidden md:block bg-white shadow-xl rounded-xl overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -591,7 +625,6 @@ const usuariosFiltrados = usuariosList.filter(u => {
               </table>
             </div>
 
-            {/* TARJETAS staff — solo móvil */}
             <div className="md:hidden space-y-3">
               {staff.map(admin => (
                 <div key={admin.id} className="bg-white rounded-xl shadow-md p-4 border border-gray-100 flex items-center justify-between">

@@ -1,6 +1,5 @@
 const pool = require('../config/db');
 
-// 1. CREAR SOLICITUD (El adoptante envía el formulario)
 const crearSolicitud = async (req, res) => {
   const { animal_id, mensaje, telefono, direccion, tiene_jardin, otros_animales } = req.body;
   const solicitante_id = req.user.id;
@@ -29,13 +28,13 @@ const crearSolicitud = async (req, res) => {
   }
 };
 
-// 2. LEER SOLICITUDES FILTRADAS 
+ 
 const getSolicitudes = async (req, res) => {
   const userId = req.user.id;
   const userRole = req.user.role;
 
   try {
-    // Base de la consulta
+   
     let query = `
       SELECT s.id, s.mensaje, s.estado, s.created_at, 
              s.telefono, s.direccion, s.tiene_jardin, s.otros_animales,
@@ -47,7 +46,7 @@ const getSolicitudes = async (req, res) => {
     `;
     let params = [];
 
-    // --- FILTRADO POR PRIVACIDAD ---
+  
     if (userRole === 'admin') {
       // Si es Admin de Protectora: Solo ve animales de SU protectora
       query += ` 

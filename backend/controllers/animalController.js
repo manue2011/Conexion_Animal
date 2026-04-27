@@ -174,7 +174,7 @@ const getAnimalById = async (req, res) => {
 const getAdoptados = async (req, res) => {
   try {
     const result = await pool.query(
-      // 👇 HEMOS CAMBIADO updated_at POR created_at 👇
+     
       "SELECT id, nombre, foto_url FROM animales WHERE estado = 'adoptado' ORDER BY created_at DESC"
     );
     res.json(result.rows);

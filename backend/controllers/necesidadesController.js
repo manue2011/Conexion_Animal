@@ -1,12 +1,11 @@
 const pool = require('../config/db');
 const nodemailer = require('nodemailer');
 
-// 1. Configuramos Nodemailer para GMAIL
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // Atajo oficial para smtp.gmail.com
+  service: 'gmail', 
   auth: {
-    user: process.env.EMAIL_USER, // conexionanimal2026@gmail.com
-    pass: process.env.EMAIL_PASS  // La contraseña de 16 letras sin espacios
+    user: process.env.EMAIL_USER, 
+    pass: process.env.EMAIL_PASS  
   }
 });
 
@@ -55,15 +54,14 @@ const crearNecesidad = async (req, res) => {
           }
         }
 
-        // --- BUSCAR VOLUNTARIOS Y ENVIAR A TODOS ---
         const voluntariosResult = await pool.query("SELECT email FROM users WHERE role = 'user'");
         const listaCorreos = voluntariosResult.rows.map(user => user.email);
 
         if (listaCorreos.length > 0) {
           await transporter.sendMail({
             from: `"Conexión Animal" <${process.env.EMAIL_USER}>`, 
-            to: process.env.EMAIL_USER, // Te lo envías a ti mismo como principal
-            bcc: listaCorreos,          // COPIA OCULTA A TODOS LOS VOLUNTARIOS REALES ✅
+            to: process.env.EMAIL_USER, 
+            bcc: listaCorreos,         
             subject: `🚨 ALERTA URGENTE: ${titulo}`,
             html: `
               <div style="font-family: Arial, sans-serif; padding: 20px; border: 2px solid #ef4444; border-radius: 10px; max-width: 600px; margin: 0 auto;">

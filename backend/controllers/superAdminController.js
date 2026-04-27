@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 
-// Obtener todas las solicitudes de rol pendientes
+
 const getPendingRequests = async (req, res) => {
   try {
     const query = `
@@ -56,16 +56,14 @@ const procesarSolicitud = async (req, res) => {
     // --- CASO B: APROBAR 
     if (accion === 'aprobar') {
       
-      // 0. Sacamos el teléfono del usuario por si nos hace falta copiarlo
+    
       const userResult = await pool.query('SELECT telefono FROM users WHERE id = $1', [userId]);
       const telefonoUsuario = userResult.rows[0]?.telefono || null;
 
-      // 🏢 LÓGICA PARA PROTECTORAS (Rol: admin)
       if (rol === 'admin') {
         let idProtectora = entidadId; // Si es 'existente', usamos el ID que viene de React
 
         if (vinculoModo === 'nueva') {
-          // 1. Creamos la protectora inyectando el nombre Y EL TELÉFONO
           const nuevaProt = await pool.query(
             "INSERT INTO protectoras (nombre, telefono) VALUES ($1, $2) RETURNING id",
             [entidadNombre, telefonoUsuario]
@@ -73,14 +71,12 @@ const procesarSolicitud = async (req, res) => {
           idProtectora = nuevaProt.rows[0].id;
         }
 
-        // 2. Vinculamos al usuario con la protectora en la tabla puente (N:M)
         await pool.query(
           "INSERT INTO protectora_admins (user_id, protectora_id) VALUES ($1, $2)",
           [userId, idProtectora]
         );
       } 
       
-      // 🐱 LÓGICA PARA COLONIAS (Rol: gestor)
       else if (rol === 'gestor') {
         if (vinculoModo === 'nueva') {
           // En tu BD, el gestor_id va directamente en la tabla de la colonia
@@ -273,7 +269,6 @@ const obtenerUsuariosPro = async (req, res) => {
 };
 
 
-// superadminController.js — añade estas dos funciones
 
 const getUsuarios = async (req, res) => {
   try {

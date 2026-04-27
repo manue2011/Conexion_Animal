@@ -48,9 +48,7 @@ const generatePIN = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// ============================================================================
-// 1. REGISTRO (Paso 1: Validar, Guardar PIN temporal y Enviar Correo)
-// ============================================================================
+
 const register = async (req, res) => {
   const { email, password, recaptchaToken } = req.body;
 
@@ -149,7 +147,6 @@ const register = async (req, res) => {
       return res.status(500).json({ message: "No pudimos enviar el correo. Revisa tu dirección." });
     }
 
-    // OJO: Devolvemos 200 OK pero SIN TOKEN. El Front pasa a la pantalla del PIN.
     res.status(200).json({ message: 'Código enviado a tu correo. Revisa también la carpeta de SPAM.' });
 
   } catch (err) {
@@ -159,9 +156,7 @@ const register = async (req, res) => {
 };
 
 
-// ============================================================================
-// 1.5 VERIFICAR EMAIL (Paso 2: Validar PIN y hacer Login real)
-// ============================================================================
+
 const verifyEmail = async (req, res) => {
   const { email, pin } = req.body;
 
@@ -220,9 +215,6 @@ const verifyEmail = async (req, res) => {
 };
 
 
-// ============================================================================
-// 2. LOGIN (Actualizado para comprobar si la cuenta está verificada)
-// ============================================================================
 const login = async (req, res) => {
   const { email, password, recaptchaToken } = req.body;
 
@@ -250,7 +242,6 @@ const login = async (req, res) => {
   });
 }
 
-// ✅ CORRECTO — acceder a .rows[0].estado
 if (user.rows[0].estado === 'archivado') {
   return res.status(403).json({ message: 'Tu cuenta ha sido suspendida. Contacta con el administrador.' });
 }
@@ -275,9 +266,7 @@ if (user.rows[0].estado === 'archivado') {
   }
 };
 
-// ============================================================================
-// 1.8 REENVIAR PIN (Solo pide el email y comprueba el tiempo)
-// ============================================================================
+
 const resendPin = async (req, res) => {
   const { email, recaptchaToken } = req.body;
 
@@ -317,7 +306,7 @@ const resendPin = async (req, res) => {
       }
     }
 
-    // Generamos nuevo PIN y le damos 15 minutos más
+  
     const pin = generatePIN(); // Asume que tienes tu función generatePIN() arriba
     const expiresAt = new Date(Date.now() + 15 * 60000);
 

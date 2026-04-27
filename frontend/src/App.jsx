@@ -1,4 +1,4 @@
-// Archivo: frontend/src/App.jsx
+
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 import axios from 'axios'; 
@@ -35,7 +35,6 @@ axios.interceptors.response.use(
     if (error.response?.status === 403 && 
         error.response?.data?.message?.includes('suspendida')) {
       
-      // ✅ Si estamos en /login, NO hacemos nada — dejamos que LoginPage muestre el error
       if (window.location.pathname === '/login') {
         return Promise.reject(error);
       }
@@ -59,9 +58,7 @@ function App() {
       <Navbar />
       <main className="min-h-screen">
       <Routes>
-        {/* ==============================
-            RUTAS PÚBLICAS
-        ============================== */}
+  
         <Route path="/" element={<HomePage />} />
         <Route path="/animal/:id" element={<AnimalDetailsPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -74,33 +71,25 @@ function App() {
         <Route path="/sobre-nosotros" element={<SobreNosotros />} />
         <Route path="/adoptados" element={<AdoptadosPage />} />
         <Route path="/planes" element={<PlanesPage />} />
-        {/* ==============================
-            RUTAS DE USUARIO NORMAL
-        ============================== */}
+   
         <Route element={<ProtectedRoute allowedRoles={['user']} />}>
           <Route path="/solicitar-rol" element={<SolicitarRolPage />} />
           <Route path="/mis-solicitudes" element={<MisSolicitudesPage />} />
         </Route>
 
-        {/* ==============================
-            RUTAS PROTEGIDAS (Solo Protectoras)
-        ============================== */}
+      
         <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
         </Route>
 
-        {/* ==============================
-            RUTAS DE SUPERADMIN (Solo Tú)
-        ============================== */}
+       
         <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
           <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
-           {/* NUEVO: Ruta de moderación */}
+       
           <Route path="/superadmin/moderacion-tablon" element={<ModeracionTablonPage />} />
         </Route>
 
-        {/* ==============================
-            RUTAS DE GESTOR (Colonias)
-        ============================== */}
+     
         <Route element={<ProtectedRoute allowedRoles={['gestor']} />}>
           <Route path="/colonia/dashboard" element={<ColoniaDashboard />} />
         </Route>
