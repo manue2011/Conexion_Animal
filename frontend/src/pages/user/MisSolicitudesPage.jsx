@@ -93,7 +93,7 @@ const MisSolicitudesPage = () => {
                 <p className="text-gray-400 italic text-sm">No tienes solicitudes {tabActiva === 'pendiente' ? 'pendientes' : tabActiva === 'aprobada' ? 'aprobadas' : 'rechazadas'}.</p>
               </div>
             ) : (
-              <div className="space-y-3 md:space-y-4">
+              <div className="space-y-3 md:space-y-4 max-h-[65vh] md:max-h-[600px] overflow-y-auto pr-2">
                 {filtradas.map((s) => {
                   const config = estadoConfig[s.estado] ?? { bg: 'bg-gray-100', text: 'text-gray-600' };
                   return (

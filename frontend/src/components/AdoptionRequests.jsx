@@ -97,7 +97,7 @@ const AdoptionRequests = () => {
           </p>
         </div>
       ) : (
-        <div className="space-y-4 md:space-y-6">
+        <div className="space-y-4 md:space-y-6 max-h-[65vh] md:max-h-[600px] overflow-y-auto pr-2">
           {filtradas.map((solicitud) => {
             const badge = estadoConfig[solicitud.estado] ?? { bg: 'bg-gray-100', text: 'text-gray-600' };
             return (
