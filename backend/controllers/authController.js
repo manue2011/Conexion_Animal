@@ -338,4 +338,116 @@ const resendPin = async (req, res) => {
     res.status(500).json({ message: 'Error del servidor al reenviar el código.' });
   }
 };
+const crypto = require('crypto');
+
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    if (!email || !validator.isEmail(email)) {
+      return res.status(400).json({ message: 'El formato del correo no es válido.' });
+    }
+
+    const emailLimpio = validator.normalizeEmail(email);
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [emailLimpio]);
+
+    // Siempre respondemos igual para no revelar si el email existe
+    if (result.rows.length === 0 || !result.rows[0].verificado) {
+      return res.status(200).json({ message: 'Si el correo existe, recibirás un enlace en breve.' });
+    }
+
+    const user = result.rows[0];
+
+    // Anti-spam: si ya tiene un token válido de hace menos de 5 minutos, bloqueamos
+    if (user.reset_token_expires_at && user.reset_token_expires_at > new Date()) {
+      const expiracion = new Date(user.reset_token_expires_at).getTime();
+      const tiempoPasado = (15 * 60000) - (expiracion - Date.now());
+      if (tiempoPasado < 5 * 60000) {
+        return res.status(429).json({ message: 'Ya se envió un enlace recientemente. Espera 5 minutos.' });
+      }
+    }
+
+    // Generamos token seguro y su expiración (15 minutos)
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 15 * 60000);
+
+    await pool.query(
+      'UPDATE users SET reset_token = $1, reset_token_expires_at = $2 WHERE email = $3',
+      [resetToken, expiresAt, emailLimpio]
+    );
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+    await transporter.sendMail({
+      from: `"Conexión Animal" <${process.env.EMAIL_USER}>`,
+      to: emailLimpio,
+      subject: '🔑 Recupera tu contraseña en Conexión Animal',
+      html: `
+        <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px; border: 2px solid #2563eb; border-radius: 10px; max-width: 500px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">Recuperación de contraseña</h2>
+          <p>Hemos recibido una solicitud para restablecer tu contraseña. Haz clic en el botón para continuar:</p>
+          <a href="${resetUrl}" style="display: inline-block; margin: 20px 0; padding: 14px 28px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+            Restablecer Contraseña
+          </a>
+          <p style="color: #6b7280; font-size: 13px;">Este enlace caduca en 15 minutos.</p>
+          <p style="color: #ef4444; font-size: 12px; margin-top: 20px;">Si no has solicitado este cambio, ignora este correo. Tu cuenta sigue segura.</p>
+        </div>
+      `
+    });
+
+    res.status(200).json({ message: 'Si el correo existe, recibirás un enlace en breve.' });
+
+  } catch (err) {
+    console.error('Error en forgotPassword:', err.message);
+    res.status(500).json({ message: 'Error del servidor.' });
+  }
+};
+
+
+const resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  try {
+    if (!token || !newPassword) {
+      return res.status(400).json({ message: 'Faltan datos.' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres.' });
+    }
+
+    // Buscamos al usuario por el token
+    const result = await pool.query(
+      'SELECT * FROM users WHERE reset_token = $1',
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: 'El enlace no es válido.' });
+    }
+
+    const user = result.rows[0];
+
+    // Verificamos que no haya caducado
+    if (new Date(user.reset_token_expires_at) < new Date()) {
+      return res.status(400).json({ message: 'El enlace ha caducado. Solicita uno nuevo.' });
+    }
+
+    // Hasheamos la nueva contraseña
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    // Actualizamos la contraseña y limpiamos el token
+    await pool.query(
+      'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires_at = NULL WHERE id = $2',
+      [passwordHash, user.id]
+    );
+
+    res.status(200).json({ message: '¡Contraseña actualizada correctamente! Ya puedes iniciar sesión.' });
+
+  } catch (err) {
+    console.error('Error en resetPassword:', err.message);
+    res.status(500).json({ message: 'Error del servidor.' });
+  }
+};
 module.exports = { register, verifyEmail, login, resendPin };

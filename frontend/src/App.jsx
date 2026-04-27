@@ -24,6 +24,8 @@ import ContactoPage from './pages/ContactoPage';
 import SobreNosotros from './pages/SobreNosotros';
 import AdoptadosPage from './pages/AdoptadosPage';
 import PlanesPage from './pages/PlanesPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 // Páginas Privadas
 import AdminDashboard from './pages/admin/AdminDashboard';
 import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
@@ -63,6 +65,8 @@ function App() {
         <Route path="/animal/:id" element={<AnimalDetailsPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/tablon" element={<TablonPage />} />
         <Route path="/privacidad" element={<PoliticaPrivacidad />} />
         <Route path="/" element={<HomePage />} />
