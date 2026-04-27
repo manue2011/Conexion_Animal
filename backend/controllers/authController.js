@@ -450,4 +450,4 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ message: 'Error del servidor.' });
   }
 };
-module.exports = { register, verifyEmail, login, resendPin };
+module.exports = { register, verifyEmail, login, resendPin,forgotPassword,resetPassword };
