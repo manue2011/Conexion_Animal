@@ -10,6 +10,7 @@ const LoginPage = () => {
   const { executeRecaptcha } = useGoogleReCaptcha();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -75,25 +76,36 @@ const LoginPage = () => {
               onChange={handleChange}
               required
             />
-             <p className="text-[11px] text-gray-400 mt-1.5 ml-1">⚠️ El sistema distingue entre mayúsculas y minúsculas.</p>
+            <p className="text-[11px] text-gray-400 mt-1.5 ml-1">⚠️ El sistema distingue entre mayúsculas y minúsculas.</p>
           </div>
 
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Contraseña</label>
-            <input
-              type="password"
-              name="password"
-              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              placeholder="••••••••"
-              onChange={handleChange}
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                className="w-full px-3 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                placeholder="••••••••"
+                onChange={handleChange}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xl leading-none select-none"
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+              >
+                {showPassword ? '🙈' : '🐵'}
+              </button>
+            </div>
           </div>
+
           <div className="text-right">
-          <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
-            ¿Olvidaste tu contraseña?
-          </Link>
-        </div>
+            <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
 
           <button
             type="submit"
