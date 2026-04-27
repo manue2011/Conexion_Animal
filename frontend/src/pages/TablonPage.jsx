@@ -3,11 +3,14 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const LIMIT = 9;
 
 const TablonPage = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const token = localStorage.getItem('token');
   const userString = localStorage.getItem('user');
@@ -19,34 +22,41 @@ const TablonPage = () => {
   const [mensajeExito, setMensajeExito] = useState('');
 
   useEffect(() => {
-    fetchPosts();
-  }, []);
+    fetchPosts(currentPage);
+  }, [currentPage]);
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (page = 1) => {
+    setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/api/posts`);
-      setPosts(response.data);
-      setLoading(false);
+      const response = await axios.get(`${API_URL}/api/posts?page=${page}&limit=${LIMIT}`);
+      setPosts(response.data.posts);
+      setTotalPages(response.data.totalPages);
     } catch (err) {
-      setError("No se pudieron cargar las publicaciones.");
+      setError('No se pudieron cargar las publicaciones.');
+    } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      if (!token) return alert("Sesión expirada");
+      if (!token) return alert('Sesión expirada');
       await axios.post(`${API_URL}/api/posts`, nuevoPost, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNuevoPost({ titulo: '', contenido: '', categoria: 'donacion', codigo_postal: '' });
       setMostrarFormulario(false);
-      setMensajeExito("¡Publicación enviada! Aparecerá cuando sea aprobada.");
+      setMensajeExito('¡Publicación enviada! Aparecerá cuando sea aprobada.');
       setTimeout(() => setMensajeExito(''), 5000);
     } catch (err) {
-      alert("Error al enviar la publicación.");
+      alert('Error al enviar la publicación.');
     }
   };
 
@@ -140,49 +150,93 @@ const TablonPage = () => {
           <p className="text-gray-500 italic">Aún no hay publicaciones aprobadas.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {posts.map((post) => (
-            <div key={post.id} className={`flex flex-col p-4 md:p-5 rounded-xl shadow-md border-2 transition-transform hover:scale-[1.02] ${post.prioridad === 'destacado' ? 'border-orange-400 bg-orange-50' : 'border-gray-100 bg-white'}`}>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {posts.map((post) => (
+              <div key={post.id} className={`flex flex-col p-4 md:p-5 rounded-xl shadow-md border-2 transition-transform hover:scale-[1.02] ${post.prioridad === 'destacado' ? 'border-orange-400 bg-orange-50' : 'border-gray-100 bg-white'}`}>
 
-              <div className="mb-3">
-                {post.prioridad === 'destacado' && (
-                  <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full mb-2 inline-block">⭐ DESTACADO</span>
-                )}
-                <h2 className="text-base md:text-xl font-bold text-gray-800 leading-tight">{post.titulo}</h2>
-                <div className="flex flex-wrap gap-2 items-center mt-1">
-                  <span className="text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded">{post.categoria.replace('_', ' ')}</span>
-                  {post.codigo_postal && (
-                    <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">📍 CP: {post.codigo_postal}</span>
+                <div className="mb-3">
+                  {post.prioridad === 'destacado' && (
+                    <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full mb-2 inline-block">⭐ DESTACADO</span>
+                  )}
+                  <h2 className="text-base md:text-xl font-bold text-gray-800 leading-tight">{post.titulo}</h2>
+                  <div className="flex flex-wrap gap-2 items-center mt-1">
+                    <span className="text-[10px] font-bold text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded">{post.categoria.replace('_', ' ')}</span>
+                    {post.codigo_postal && (
+                      <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">📍 CP: {post.codigo_postal}</span>
+                    )}
+                  </div>
+                  {post.plan_autor === 'pro' && (
+                    <span className="inline-flex items-center bg-blue-100 text-blue-600 text-[9px] font-black px-1 py-0.5 rounded shadow-sm border border-blue-200 animate-pulse tracking-tighter mt-2">
+                      🛡️ VERIFICADO
+                    </span>
                   )}
                 </div>
-                {post.plan_autor === 'pro' && (
-                  <span className="inline-flex items-center bg-blue-100 text-blue-600 text-[9px] font-black px-1 py-0.5 rounded shadow-sm border border-blue-200 animate-pulse tracking-tighter mt-2">
-                    🛡️ VERIFICADO
-                  </span>
-                )}
-              </div>
 
-              <p className="text-gray-700 text-xs md:text-sm mb-4 flex-1 italic line-clamp-4">"{post.contenido}"</p>
+                <p className="text-gray-700 text-xs md:text-sm mb-4 flex-1 italic line-clamp-4">"{post.contenido}"</p>
 
-              <div className="mt-auto pt-4 border-t border-gray-100 bg-gray-50 -mx-4 md:-mx-5 -mb-4 md:-mb-5 p-4 rounded-b-xl">
-                <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Publicado por</p>
-                <div className="space-y-1 text-xs text-gray-700">
-                  <p className="flex items-center gap-2">
-                    <span>👤</span>
-                    <span className="font-bold truncate">{post.nombre_autor || post.autor_email}</span>
-                  </p>
-                  {post.autor_telefono && (
+                <div className="mt-auto pt-4 border-t border-gray-100 bg-gray-50 -mx-4 md:-mx-5 -mb-4 md:-mb-5 p-4 rounded-b-xl">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Publicado por</p>
+                  <div className="space-y-1 text-xs text-gray-700">
                     <p className="flex items-center gap-2">
-                      <span>📞</span>
-                      <a href={`tel:${post.autor_telefono}`} className="text-blue-600 font-bold hover:underline">{post.autor_telefono}</a>
+                      <span>👤</span>
+                      <span className="font-bold truncate">{post.nombre_autor || post.autor_email}</span>
                     </p>
-                  )}
+                    {post.autor_telefono && (
+                      <p className="flex items-center gap-2">
+                        <span>📞</span>
+                        <a href={`tel:${post.autor_telefono}`} className="text-blue-600 font-bold hover:underline">{post.autor_telefono}</a>
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-[9px] text-gray-400 mt-3 text-right">📅 {new Date(post.created_at).toLocaleDateString()}</p>
                 </div>
-                <p className="text-[9px] text-gray-400 mt-3 text-right">📅 {new Date(post.created_at).toLocaleDateString()}</p>
               </div>
+            ))}
+          </div>
+
+          {/* PAGINACIÓN */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-10 flex-wrap">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold text-sm hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                ← Anterior
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`w-10 h-10 rounded-xl font-bold text-sm transition border ${
+                    currentPage === page
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                      : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold text-sm hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Siguiente →
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+
+          {/* Contador */}
+          {posts.length > 0 && (
+            <p className="text-center text-gray-400 text-sm mt-4">
+              Página {currentPage} de {totalPages}
+            </p>
+          )}
+        </>
       )}
     </div>
   );

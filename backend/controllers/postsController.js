@@ -37,7 +37,16 @@ const crearPost = async (req, res) => {
 };
 
 const obtenerTablon = async (req, res) => {
+  const { page = 1, limit = 9 } = req.query;
+
   try {
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    const countResult = await pool.query(`
+      SELECT COUNT(*) FROM posts WHERE estado = 'approved'
+    `);
+    const total = parseInt(countResult.rows[0].count);
+
     const result = await pool.query(`
       SELECT p.id, p.titulo, p.contenido, p.categoria, p.prioridad, p.created_at, p.codigo_postal, 
              u.entidad_solicitada as nombre_autor,
@@ -48,11 +57,19 @@ const obtenerTablon = async (req, res) => {
       JOIN users u ON p.publicador_id = u.id
       WHERE p.estado = 'approved'
       ORDER BY p.prioridad = 'destacado' DESC, p.created_at DESC
-    `);
-    res.json(result.rows);
+      LIMIT $1 OFFSET $2
+    `, [parseInt(limit), offset]);
+
+    res.json({
+      posts: result.rows,
+      total,
+      page: parseInt(page),
+      totalPages: Math.ceil(total / parseInt(limit))
+    });
+
   } catch (error) {
-    console.error("Error al cargar el tablón:", error.message);
-    res.status(500).json({ error: "Error al cargar las publicaciones" });
+    console.error('Error al cargar el tablón:', error.message);
+    res.status(500).json({ error: 'Error al cargar las publicaciones' });
   }
 };
 

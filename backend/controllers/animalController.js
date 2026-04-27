@@ -115,42 +115,65 @@ const deleteAnimal = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Error al eliminar" });
   }
-};
-const getPublicAnimals = async (req, res) => {
-  const { especie, urgent, ubicacion } = req.query; 
+};const getPublicAnimals = async (req, res) => {
+  const { especie, urgent, ubicacion, page = 1, limit = 8 } = req.query;
 
   try {
-    let query = `
+    let baseQuery = `
       SELECT a.*, p.direccion as protectora_direccion 
       FROM animales a
       LEFT JOIN protectoras p ON a.protectora_id = p.id
+      WHERE a.estado = 'activo'
+    `;
+    let countQuery = `
+      SELECT COUNT(*) FROM animales a
       WHERE a.estado = 'activo'
     `;
     let params = [];
     let count = 1;
 
     if (especie && especie !== 'Todos') {
-      query += ` AND a.especie ILIKE $${count}`;
+      const filtro = ` AND a.especie ILIKE $${count}`;
+      baseQuery += filtro;
+      countQuery += filtro;
       params.push(especie);
       count++;
     }
 
     if (urgent === 'true') {
-      query += ` AND a.urgent = true`;
+      baseQuery += ` AND a.urgent = true`;
+      countQuery += ` AND a.urgent = true`;
     }
 
-    if (ubicacion && ubicacion.trim() !== "") {
-      query += ` AND a.ubicacion ILIKE $${count}`;
+    if (ubicacion && ubicacion.trim() !== '') {
+      const filtro = ` AND a.ubicacion ILIKE $${count}`;
+      baseQuery += filtro;
+      countQuery += filtro;
       params.push(`%${ubicacion.trim()}%`);
       count++;
     }
 
-    query += " ORDER BY a.urgent DESC, a.created_at DESC";
+    // Total de resultados para calcular páginas en el frontend
+    const totalResult = await pool.query(countQuery, params);
+    const total = parseInt(totalResult.rows[0].count);
 
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    // Paginación
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    baseQuery += ` ORDER BY a.urgent DESC, a.created_at DESC LIMIT $${count} OFFSET $${count + 1}`;
+    params.push(parseInt(limit), offset);
+
+    const result = await pool.query(baseQuery, params);
+
+    res.json({
+      animales: result.rows,
+      total,
+      page: parseInt(page),
+      totalPages: Math.ceil(total / parseInt(limit))
+    });
+
   } catch (err) {
-    res.status(500).json({ message: "Error al filtrar" });
+    console.error(err.message);
+    res.status(500).json({ message: 'Error al filtrar' });
   }
 };
 const getAnimalById = async (req, res) => {

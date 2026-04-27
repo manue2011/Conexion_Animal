@@ -3,10 +3,13 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const LIMIT = 8;
 
 const HomePage = () => {
   const [animales, setAnimales] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [filtros, setFiltros] = useState({
     ubicacion: '',
     especie: 'Todos',
@@ -14,15 +17,21 @@ const HomePage = () => {
   });
 
   useEffect(() => {
+    // Al cambiar filtros, volvemos a página 1
+    setCurrentPage(1);
+  }, [filtros]);
+
+  useEffect(() => {
     const fetchAnimales = async () => {
       setLoading(true);
       try {
         const { ubicacion, especie, urgent } = filtros;
-        const url = `${API_URL}/api/animales/public?ubicacion=${ubicacion}&especie=${especie}&urgent=${urgent}`;
+        const url = `${API_URL}/api/animales/public?ubicacion=${ubicacion}&especie=${especie}&urgent=${urgent}&page=${currentPage}&limit=${LIMIT}`;
         const response = await axios.get(url);
-        setAnimales(response.data);
+        setAnimales(response.data.animales);
+        setTotalPages(response.data.totalPages);
       } catch (error) {
-        console.error("Error al cargar catálogo:", error);
+        console.error('Error al cargar catálogo:', error);
       } finally {
         setLoading(false);
       }
@@ -33,7 +42,12 @@ const HomePage = () => {
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [filtros]);
+  }, [filtros, currentPage]);
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -50,7 +64,6 @@ const HomePage = () => {
       <div className="max-w-6xl mx-auto px-4 -mt-8 md:-mt-10">
         <div className="bg-white p-4 md:p-6 rounded-2xl shadow-xl border border-gray-100 flex flex-col sm:flex-row flex-wrap gap-3 md:gap-4 items-stretch sm:items-end">
 
-          {/* FILTRO UBICACIÓN */}
           <div className="w-full sm:flex-1 sm:min-w-[200px]">
             <label className="block text-xs font-black text-gray-400 uppercase mb-2 ml-1">
               📍 ¿Dónde lo buscas?
@@ -66,7 +79,6 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* FILTRO ESPECIE */}
           <div className="w-full sm:w-44">
             <label className="block text-xs font-black text-gray-400 uppercase mb-2 ml-1">Especie</label>
             <select
@@ -83,7 +95,6 @@ const HomePage = () => {
             </select>
           </div>
 
-          {/* CHECKBOX URGENTE */}
           <div
             className="flex items-center gap-3 px-4 py-3 bg-red-50 rounded-xl border-2 border-transparent hover:border-red-200 cursor-pointer transition-all"
             onClick={() => setFiltros({ ...filtros, urgent: !filtros.urgent })}
@@ -113,8 +124,6 @@ const HomePage = () => {
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
               {animales.map((animal) => (
                 <div key={animal.id} className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col h-full">
-
-                  {/* FOTO */}
                   <div className="h-40 sm:h-48 md:h-56 w-full overflow-hidden relative">
                     <img
                       src={animal.foto_url || 'https://via.placeholder.com/400x300?text=🐾'}
@@ -129,7 +138,6 @@ const HomePage = () => {
                     )}
                   </div>
 
-                  {/* CUERPO */}
                   <div className="p-3 md:p-5 flex flex-col flex-1">
                     <div className="flex justify-between items-start mb-1 gap-1">
                       <h3 className="text-base md:text-xl font-bold text-gray-800 leading-tight truncate">{animal.nombre}</h3>
@@ -168,6 +176,52 @@ const HomePage = () => {
                 <h3 className="text-xl font-bold text-gray-800">No hay resultados</h3>
                 <p className="text-gray-500">Prueba a cambiar los filtros de búsqueda.</p>
               </div>
+            )}
+
+            {/* PAGINACIÓN */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-10 flex-wrap">
+
+                {/* Botón anterior */}
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold text-sm hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  ← Anterior
+                </button>
+
+                {/* Números de página */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`w-10 h-10 rounded-xl font-bold text-sm transition border ${
+                      currentPage === page
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                {/* Botón siguiente */}
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold text-sm hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  Siguiente →
+                </button>
+              </div>
+            )}
+
+            {/* Contador de resultados */}
+            {animales.length > 0 && (
+              <p className="text-center text-gray-400 text-sm mt-4">
+                Página {currentPage} de {totalPages}
+              </p>
             )}
           </>
         )}
