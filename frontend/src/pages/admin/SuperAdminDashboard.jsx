@@ -25,6 +25,7 @@ const SuperAdminDashboard = () => {
   const [usuariosList, setUsuariosList] = useState([]);
   const [searchUsuario, setSearchUsuario] = useState('');
   const [filtroRol, setFiltroRol] = useState('todos');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const fetchDatos = async () => {
@@ -254,24 +255,49 @@ const SuperAdminDashboard = () => {
         </div>
       )}
 
+    <div className="md:hidden flex items-center justify-between bg-gray-900 text-white px-4 py-3">
+      <h2 className="text-lg font-bold tracking-wider">
+        👑 SuperAdmin
+      </h2>
+      <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-white text-2xl focus:outline-none">
+        {sidebarOpen ? '✕' : '☰'}
+      </button>
+    </div>
       {/* SIDEBAR */}
-      <aside className="w-full md:w-64 md:min-h-screen bg-gray-900 text-white flex flex-col shadow-2xl z-10 shrink-0 md:sticky md:top-0">
-        <div className="p-6 text-center border-b border-gray-800">
-          <h2 className="text-2xl font-bold text-yellow-500 mb-1">👑 SuperAdmin</h2>
-          <p className="text-xs text-gray-400">Panel de Control Global</p>
-        </div>
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+                        <aside
+                className={`
+                  fixed md:sticky top-0 left-0 z-50 md:z-10
+                  w-72 md:w-64 h-dvh md:min-h-screen
+                  bg-gray-900 text-white flex flex-col shadow-2xl shrink-0
+                  overflow-y-auto
+                  transform transition-transform duration-300 ease-in-out
+                  ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                  md:static md:h-auto
+                `}
+              >
+            <div className="p-6 text-center border-b border-gray-800 hidden md:block">
+        <h2 className="text-2xl font-bold text-yellow-500 mb-1">👑 SuperAdmin</h2>
+        <p className="text-xs text-gray-400">Panel de Control Global</p>
+      </div>
         <nav className="flex-1 p-4 space-y-2">
-          <button onClick={() => setActiveTab('dashboard')} className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>📊 Métricas (KPIs)</button>
-          <button onClick={() => setActiveTab('solicitudes')} className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${activeTab === 'solicitudes' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>
+          <button onClick={() => {setActiveTab('dashboard'); setSidebarOpen(false); }} className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>📊 Métricas (KPIs)</button>
+          <button onClick={() => {setActiveTab('solicitudes'); setSidebarOpen(false);}} className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${activeTab === 'solicitudes' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>
             <span>📝 Solicitudes</span>
             {solicitudes.length > 0 && <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow">{solicitudes.length}</span>}
           </button>
-          <button onClick={() => setActiveTab('usuarios')} className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${activeTab === 'usuarios' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>
+          <button onClick={() => {setActiveTab('usuarios');setSidebarOpen(false);}} className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${activeTab === 'usuarios' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>
             <span>👥 Usuarios</span>
           </button>
-          <button onClick={() => setActiveTab('moderacion')} className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'moderacion' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>⚖️ Moderación Foro</button>
-          <button onClick={() => setActiveTab('entidades')} className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'entidades' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>🏢 Protectoras / Colonias</button>
-          <button onClick={() => setActiveTab('staff')} className={`w-full flex items-center px-4 py-3 rounded-lg transition ${activeTab === 'staff' ? 'bg-red-700 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>🔑 Gestión Staff</button>
+          <button onClick={() => {setActiveTab('moderacion');setSidebarOpen(false);}} className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'moderacion' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>⚖️ Moderación Foro</button>
+          <button onClick={() => {setActiveTab('entidades');setSidebarOpen(false);}} className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === 'entidades' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>🏢 Protectoras / Colonias</button>
+          <button onClick={() => {setActiveTab('staff');setSidebarOpen(false);}} className={`w-full flex items-center px-4 py-3 rounded-lg transition ${activeTab === 'staff' ? 'bg-red-700 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-800'}`}>🔑 Gestión Staff</button>
         </nav>
       </aside>
 
