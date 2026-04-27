@@ -2,6 +2,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 import axios from 'axios'; 
+import { inject } from '@vercel/analytics';
+inject();
 // Componentes
 import Navbar from './components/Navbar'; 
 import ProtectedRoute from './components/ProtectedRoute';
