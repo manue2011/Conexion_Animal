@@ -125,7 +125,6 @@ const getEntidadesExistentes = async (req, res) => {
     // Sacamos las colonias
     const colonias = await pool.query("SELECT id, nombre FROM colonias WHERE estado = 'activo' ORDER BY nombre ASC");
 
-    // Lo enviamos todo junto a React
     res.json({
       protectoras: protectoras.rows,
       colonias: colonias.rows
@@ -140,11 +139,11 @@ const obtenerMetricasGlobales = async (req, res) => {
     const query = `
       SELECT 
         -- 1. ECOSISTEMA Y CRECIMIENTO
-        (SELECT COUNT(*)::INT FROM users) as usuarios_totales,
+        (SELECT COUNT(*)::INT FROM users WHERE verificado = true) as usuarios_totales,
         (SELECT COUNT(*)::INT FROM protectoras WHERE estado = 'activo') as protectoras_activas,
         (SELECT COUNT(*)::INT FROM colonias WHERE estado = 'activo') as colonias_activas,
-        (SELECT COUNT(*)::INT FROM users WHERE role = 'user') as usuarios_normales,
-        (SELECT COUNT(*)::INT FROM users WHERE plan = 'pro') as suscripciones_pro,
+        (SELECT COUNT(*)::INT FROM users WHERE role = 'user' AND verificado = true) as usuarios_normales,
+        (SELECT COUNT(*)::INT FROM users WHERE plan = 'pro' AND verificado = true) as suscripciones_pro,
 
         -- 2. IMPACTO SOCIAL (DATOS REALES)
         (SELECT COUNT(*)::INT FROM animales WHERE estado = 'adoptado') as adopciones_totales,
@@ -275,6 +274,7 @@ const getUsuarios = async (req, res) => {
     const result = await pool.query(
       `SELECT id, email, role, estado, created_at 
        FROM users 
+       WHERE verificado = true
        ORDER BY created_at DESC`
     );
     res.json(result.rows);
