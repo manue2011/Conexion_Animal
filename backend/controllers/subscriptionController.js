@@ -109,7 +109,7 @@ const createCheckoutSession = async (req, res) => {
             name: 'Conexión Animal - Plan Pro 🐾',
             description: 'Animales ilimitados, posts ilimitados y soporte prioritario.'
           },
-          unit_amount: 1900, // 19.00€ en céntimos
+          unit_amount: 999, // 9.99€ en céntimos
           recurring: { interval: 'month' }
         },
         quantity: 1
