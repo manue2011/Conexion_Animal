@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import axios from 'axios';
+import Filter from 'bad-words-es'; 
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const filter = new Filter();
 
 const ContactoPage = () => {
   const [formData, setFormData] = useState({ nombre: '', email: '', mensaje: '' });
@@ -9,6 +11,12 @@ const ContactoPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (filter.isProfane(formData.mensaje) || filter.isProfane(formData.nombre)) {
+      setStatus('ofensivo');
+      return; 
+    }
+
     setStatus('enviando');
     try {
       await axios.post(`${API_URL}/api/contacto`, formData);
@@ -24,13 +32,22 @@ const ContactoPage = () => {
       <div className="w-full max-w-2xl">
         <h1 className="text-2xl md:text-3xl font-bold text-blue-600 mb-6 text-center">Contacta con nosotros 🐾</h1>
 
+        {status === 'ofensivo' && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-800 p-4 rounded mb-6 shadow-sm animate-fade-in">
+            <p className="font-bold text-sm md:text-base">⚠️ Mensaje bloqueado</p>
+            <p className="text-xs md:text-sm mt-1">
+              Tu mensaje contiene lenguaje inapropiado u ofensivo. Por favor, mantén un tono respetuoso.
+            </p>
+          </div>
+        )}
+
         {status === 'exito' && (
-          <p className="bg-green-100 text-green-700 p-3 rounded mb-4 text-center text-sm md:text-base">
+          <p className="bg-green-100 text-green-700 p-3 rounded mb-4 text-center text-sm md:text-base animate-fade-in">
             ¡Mensaje enviado! Te responderemos pronto.
           </p>
         )}
         {status === 'error' && (
-          <p className="bg-red-100 text-red-700 p-3 rounded mb-4 text-center text-sm md:text-base">
+          <p className="bg-red-100 text-red-700 p-3 rounded mb-4 text-center text-sm md:text-base animate-fade-in">
             Hubo un error. Inténtalo más tarde.
           </p>
         )}
@@ -41,7 +58,11 @@ const ContactoPage = () => {
             <input
               type="text" placeholder="Ej: María García" required
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-              value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+              value={formData.nombre} 
+              onChange={(e) => {
+                setFormData({ ...formData, nombre: e.target.value });
+                if (status === 'ofensivo') setStatus(null);
+              }}
             />
           </div>
           <div>
@@ -49,7 +70,8 @@ const ContactoPage = () => {
             <input
               type="email" placeholder="Ej: maria@email.com" required
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-              value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              value={formData.email} 
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
           </div>
           <div>
@@ -57,7 +79,11 @@ const ContactoPage = () => {
             <textarea
               placeholder="Escribe tu mensaje aquí..." required
               className="w-full p-3 border border-gray-300 rounded-lg h-32 focus:ring-2 focus:ring-blue-500 outline-none text-sm resize-none"
-              value={formData.mensaje} onChange={(e) => setFormData({ ...formData, mensaje: e.target.value })}
+              value={formData.mensaje} 
+              onChange={(e) => {
+                setFormData({ ...formData, mensaje: e.target.value });
+                if (status === 'ofensivo') setStatus(null);
+              }}
             />
           </div>
           <button
