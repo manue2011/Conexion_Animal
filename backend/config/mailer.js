@@ -14,8 +14,9 @@ const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
 
 const enviarCorreoGmailAPI = async ({ to, bcc, replyTo, subject, html }) => {
   try {
+    const nombreRemitente = `=?UTF-8?B?${Buffer.from('Conexión Animal', 'utf8').toString('base64')}?=`;
     const headers = [
-      `From: "Conexión Animal" <${process.env.EMAIL_USER}>`,
+      `From: ${nombreRemitente} <${process.env.EMAIL_USER}>`,
       `To: ${Array.isArray(to) ? to.join(',') : to}`,
       `Subject: =?UTF-8?B?${Buffer.from(subject, 'utf8').toString('base64')}?=`,
       'MIME-Version: 1.0',
