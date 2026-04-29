@@ -4,19 +4,10 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const validator = require('validator');
 const dns = require('dns').promises;
-const nodemailer = require('nodemailer');
+const crypto = require('crypto'); // Lo movemos arriba con las demás librerías
 
-// 1. Configuramos Nodemailer para GMAIL (Igual que en tus necesidades)
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    type: 'OAuth2',
-    user: process.env.EMAIL_USER, 
-    clientId: process.env.GMAIL_CLIENT_ID,
-    clientSecret: process.env.GMAIL_CLIENT_SECRET,
-    refreshToken: process.env.GMAIL_REFRESH_TOKEN
-  }
-});
+// 1. Importamos la nueva función de Gmail API (Asegúrate de que la ruta sea la correcta)
+const { enviarCorreoGmailAPI } = require('../config/mailer');
 
 // Utilidades de validación y seguridad
 const validarDominioReal = async (email) => {
@@ -50,7 +41,6 @@ const verifyRecaptcha = async (token) => {
 const generatePIN = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
-
 
 const register = async (req, res) => {
   const { email, password, recaptchaToken } = req.body;
@@ -93,19 +83,17 @@ const register = async (req, res) => {
       }
 
       // --- BLOQUEO ANTI-SPAM (5 MINUTOS) ---
-      // Si tiene un PIN no caducado, calculamos hace cuánto se generó
       if (userRecord.pin_expires_at && userRecord.pin_expires_at > new Date()) {
         const expiracionReal = new Date(userRecord.pin_expires_at).getTime();
-        const tiempoPasadoMs = (15 * 60000) - (expiracionReal - Date.now()); // Milisegundos desde que se creó
+        const tiempoPasadoMs = (15 * 60000) - (expiracionReal - Date.now()); 
         
-        if (tiempoPasadoMs < 5 * 60000) { // Si han pasado MENOS de 5 minutos
+        if (tiempoPasadoMs < 5 * 60000) { 
           return res.status(429).json({ 
             message: 'Ya se ha enviado un código recientemente. Por favor, revisa tu correo o espera 5 minutos para solicitar otro.' 
           });
         }
       }
 
-      // Si han pasado más de 5 minutos, le generamos un PIN nuevo y actualizamos la contraseña
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(password, salt);
       
@@ -124,10 +112,9 @@ const register = async (req, res) => {
       );
     }
 
-   
+    // CAMBIO A GMAIL API AQUÍ
     try {
-      await transporter.sendMail({
-        from: `"Conexión Animal" <${process.env.EMAIL_USER}>`,
+      await enviarCorreoGmailAPI({
         to: emailLimpio,
         subject: '🐾 Verifica tu cuenta en Conexión Animal',
         html: `
@@ -142,9 +129,9 @@ const register = async (req, res) => {
           </div>
         `
       });
-      console.log(`📧 Código enviado a ${emailLimpio}`);
+      console.log(`📧 Código enviado a ${emailLimpio} vía Gmail API`);
     } catch (emailErr) {
-      console.error("❌ Error al enviar el código por email:", emailErr);
+      console.error("❌ Error en Gmail API (Registro):", emailErr.message);
       return res.status(500).json({ message: "No pudimos enviar el correo. Revisa tu dirección." });
     }
 
@@ -155,8 +142,6 @@ const register = async (req, res) => {
     res.status(500).json({ message: 'Error del servidor' });
   }
 };
-
-
 
 const verifyEmail = async (req, res) => {
   const { email, pin } = req.body;
@@ -195,7 +180,6 @@ const verifyEmail = async (req, res) => {
 
     const activeUser = updatedUser.rows[0];
 
-    // Ahora sí creamos el Token de acceso para loguearlo en la app
     const token = jwt.sign(
       { id: activeUser.id, role: activeUser.role, plan: activeUser.plan },
       process.env.JWT_SECRET,
@@ -213,7 +197,6 @@ const verifyEmail = async (req, res) => {
     res.status(500).json({ message: 'Error del servidor al verificar el código.' });
   }
 };
-
 
 const login = async (req, res) => {
   const { email, password, recaptchaToken } = req.body;
@@ -235,16 +218,15 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Credenciales inválidas' });
     }
 
- if (!user.rows[0].verificado) {
-  return res.status(403).json({ 
-    message: 'Tu cuenta no está verificada. Intenta registrarte de nuevo para recibir un código al correo.' 
-  });
-}
+    if (!user.rows[0].verificado) {
+      return res.status(403).json({ 
+        message: 'Tu cuenta no está verificada. Intenta registrarte de nuevo para recibir un código al correo.' 
+      });
+    }
 
-if (user.rows[0].estado === 'archivado') {
-  return res.status(403).json({ message: 'Tu cuenta ha sido suspendida. Contacta con el administrador.' });
-}
-
+    if (user.rows[0].estado === 'archivado') {
+      return res.status(403).json({ message: 'Tu cuenta ha sido suspendida. Contacta con el administrador.' });
+    }
 
     const validPassword = await bcrypt.compare(password, user.rows[0].password_hash);
     if (!validPassword) {
@@ -265,7 +247,6 @@ if (user.rows[0].estado === 'archivado') {
   }
 };
 
-
 const resendPin = async (req, res) => {
   const { email, recaptchaToken } = req.body;
 
@@ -280,7 +261,6 @@ const resendPin = async (req, res) => {
 
     const emailLimpio = validator.normalizeEmail(email);
 
-    // Buscamos al usuario
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [emailLimpio]);
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Usuario no encontrado.' });
@@ -288,12 +268,10 @@ const resendPin = async (req, res) => {
 
     const user = result.rows[0];
 
-    // Si ya está verificado, no mandamos nada
     if (user.verificado) {
       return res.status(400).json({ message: 'Esta cuenta ya está verificada.' });
     }
 
-    // Regla de los 5 minutos
     if (user.pin_expires_at && user.pin_expires_at > new Date()) {
       const expiracionReal = new Date(user.pin_expires_at).getTime();
       const tiempoPasadoMs = (15 * 60000) - (expiracionReal - Date.now()); 
@@ -305,7 +283,6 @@ const resendPin = async (req, res) => {
       }
     }
 
-  
     const pin = generatePIN(); 
     const expiresAt = new Date(Date.now() + 15 * 60000);
 
@@ -314,9 +291,8 @@ const resendPin = async (req, res) => {
       [pin, expiresAt, emailLimpio]
     );
 
-    // Enviamos el correo
-    await transporter.sendMail({
-      from: `"Conexión Animal" <${process.env.EMAIL_USER}>`,
+    // CAMBIO A GMAIL API AQUÍ
+    await enviarCorreoGmailAPI({
       to: emailLimpio,
       subject: '🐾 Tu nuevo código de Conexión Animal',
       html: `
@@ -337,7 +313,6 @@ const resendPin = async (req, res) => {
     res.status(500).json({ message: 'Error del servidor al reenviar el código.' });
   }
 };
-const crypto = require('crypto');
 
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -374,8 +349,8 @@ const forgotPassword = async (req, res) => {
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
-    await transporter.sendMail({
-      from: `"Conexión Animal" <${process.env.EMAIL_USER}>`,
+    // CAMBIO A GMAIL API AQUÍ
+    await enviarCorreoGmailAPI({
       to: emailLimpio,
       subject: '🔑 Recupera tu contraseña en Conexión Animal',
       html: `
@@ -399,7 +374,6 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-
 const resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;
 
@@ -412,7 +386,6 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres.' });
     }
 
-    // Buscamos al usuario por el token
     const result = await pool.query(
       'SELECT * FROM users WHERE reset_token = $1',
       [token]
@@ -424,16 +397,13 @@ const resetPassword = async (req, res) => {
 
     const user = result.rows[0];
 
-    // Verificamos que no haya caducado
     if (new Date(user.reset_token_expires_at) < new Date()) {
       return res.status(400).json({ message: 'El enlace ha caducado. Solicita uno nuevo.' });
     }
 
-    // Hasheamos la nueva contraseña
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(newPassword, salt);
 
-    // Actualizamos la contraseña y limpiamos el token
     await pool.query(
       'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires_at = NULL WHERE id = $2',
       [passwordHash, user.id]
@@ -446,4 +416,5 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ message: 'Error del servidor.' });
   }
 };
-module.exports = { register, verifyEmail, login, resendPin,forgotPassword,resetPassword };
+
+module.exports = { register, verifyEmail, login, resendPin, forgotPassword, resetPassword };
