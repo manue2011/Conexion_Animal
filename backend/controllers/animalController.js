@@ -58,28 +58,67 @@ const createAnimal = async (req, res) => {
 const getAnimals = async (req, res) => {
   try {
     const { id: userId, role: userRole } = req.user;
-    let query, params = [];
+    const { especie, order, page = 1, limit = 8 } = req.query;
+
+    let baseQuery = "";
+    let countQuery = "";
+    let params = [];
+    let count = 1;
 
     if (userRole === 'superadmin') {
-      query = "SELECT * FROM animales WHERE estado = 'activo' ORDER BY created_at DESC";
+      baseQuery = "SELECT * FROM animales WHERE estado = 'activo'";
+      countQuery = "SELECT COUNT(*) FROM animales WHERE estado = 'activo'";
     } else if (userRole === 'admin') {
-      query = `
+      baseQuery = `
         SELECT a.* FROM animales a
         JOIN protectora_admins pa ON a.protectora_id = pa.protectora_id
-        WHERE pa.user_id = $1 AND a.estado = 'activo'
-        ORDER BY a.created_at DESC`;
-      params = [userId];
+        WHERE pa.user_id = $1 AND a.estado = 'activo'`;
+      countQuery = `
+        SELECT COUNT(*) FROM animales a
+        JOIN protectora_admins pa ON a.protectora_id = pa.protectora_id
+        WHERE pa.user_id = $1 AND a.estado = 'activo'`;
+      params.push(userId);
+      count++;
     } else {
-      query = `
+      baseQuery = `
         SELECT a.* FROM animales a
         JOIN colonias c ON a.colonia_id = c.id
-        WHERE c.gestor_id = $1 AND a.estado = 'activo'
-        ORDER BY a.created_at DESC`;
-      params = [userId];
+        WHERE c.gestor_id = $1 AND a.estado = 'activo'`;
+      countQuery = `
+        SELECT COUNT(*) FROM animales a
+        JOIN colonias c ON a.colonia_id = c.id
+        WHERE c.gestor_id = $1 AND a.estado = 'activo'`;
+      params.push(userId);
+      count++;
     }
 
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    if (especie && especie.trim() !== '') {
+      const filtroEspecie = ` AND a.especie ILIKE $${count}`;
+      baseQuery += (userRole === 'superadmin' ? ` AND especie ILIKE $${count}` : filtroEspecie);
+      countQuery += (userRole === 'superadmin' ? ` AND especie ILIKE $${count}` : filtroEspecie);
+      params.push(especie);
+      count++;
+    }
+
+    const totalResult = await pool.query(countQuery, params);
+    const total = parseInt(totalResult.rows[0].count);
+
+    const orden = order === 'asc' ? 'ASC' : 'DESC';
+    baseQuery += userRole === 'superadmin' 
+      ? ` ORDER BY created_at ${orden}` 
+      : ` ORDER BY a.created_at ${orden}`;
+
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    baseQuery += ` LIMIT $${count} OFFSET $${count + 1}`;
+    params.push(parseInt(limit), offset);
+
+    const result = await pool.query(baseQuery, params);
+
+    res.json({
+      animales: result.rows,
+      total: total
+    });
+
   } catch (err) {
     console.error("Error al obtener:", err.message);
     res.status(500).json({ message: "Error al obtener animales" });

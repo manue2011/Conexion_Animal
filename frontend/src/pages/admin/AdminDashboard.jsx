@@ -225,7 +225,7 @@ const AdminDashboard = () => {
         )}
 
           {activeView === 'registrar' && (
-            <div className="animate-fade-in max-w-2xl">
+          <div className="animate-fade-in max-w-5xl w-full">
               {!protectoraInfo?.direccion ? (
                 <div className="bg-white p-10 rounded-xl shadow text-center">
                   <p className="text-5xl mb-4">🚫</p>
