@@ -44,7 +44,7 @@ const crearNecesidad = async (req, res) => {
           }
         }
 
-        const voluntariosResult = await pool.query("SELECT email FROM users WHERE role = 'user'");
+        const voluntariosResult = await pool.query("SELECT email FROM users WHERE role = 'user' AND verificado = true");
         const listaCorreos = voluntariosResult.rows.map(user => user.email);
 
         if (listaCorreos.length > 0) {
