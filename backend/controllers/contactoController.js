@@ -1,37 +1,12 @@
-const nodemailer = require('nodemailer');
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    type: 'OAuth2',
-    user: process.env.EMAIL_USER,
-    clientId: process.env.GMAIL_CLIENT_ID,
-    clientSecret: process.env.GMAIL_CLIENT_SECRET,
-    refreshToken: process.env.GMAIL_REFRESH_TOKEN
-  }
-});
-
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('❌ SMTP ERROR:', error.message, '| Código:', error.code);
-  } else {
-    console.log('✅ SMTP conectado correctamente con:', process.env.EMAIL_USER);
-  }
-});
-
+const { enviarCorreoGmailAPI } = require('../config/mailer');
 
 const enviarContacto = async (req, res) => {
   const { nombre, email, mensaje } = req.body;
 
   try {
-    await transporter.sendMail({
-      from: `"Web Conexión Animal" <${process.env.EMAIL_USER}>`, 
-      
+    await enviarCorreoGmailAPI({
       to: process.env.EMAIL_USER, 
-      
-
       replyTo: email, 
-      
       subject: `Nuevo mensaje de contacto: ${nombre}`,
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
@@ -48,12 +23,8 @@ const enviarContacto = async (req, res) => {
 
     res.status(200).json({ message: 'Email enviado correctamente' });
   } catch (error) {
-    console.error('❌ Error Nodemailer:');
-  console.error('   mensaje:', error.message);
-  console.error('   código:', error.code);
-  console.error('   respuesta SMTP:', error.response);
-  res.status(500).json({ message: 'Error al enviar el email' });
-
+    console.error('❌ Error en Gmail API (Contacto):', error.message);
+    res.status(500).json({ message: 'Error al enviar el email' });
   }
 };
 

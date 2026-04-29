@@ -1,16 +1,5 @@
 const pool = require('../config/db');
-const nodemailer = require('nodemailer');
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    type: 'OAuth2',
-    user: process.env.EMAIL_USER, 
-    clientId: process.env.GMAIL_CLIENT_ID,
-    clientSecret: process.env.GMAIL_CLIENT_SECRET,
-    refreshToken: process.env.GMAIL_REFRESH_TOKEN
-  }
-});
+const { enviarCorreoGmailAPI } = require('../config/mailer');
 
 const crearNecesidad = async (req, res) => {
   const { titulo, descripcion, categoria, prioridad, protectora_id, colonia_id } = req.body;
@@ -24,7 +13,7 @@ const crearNecesidad = async (req, res) => {
       [publicador_id, protectora_id || null, colonia_id || null, titulo, descripcion, categoria, prioridad]
     );
 
-    // 2. SISTEMA DE ALERTAS CON GMAIL
+    // 2. SISTEMA DE ALERTAS CON GMAIL API
     if (prioridad === 'urgente') {
       try {
         let nombreEntidad = "Entidad no especificada";
@@ -59,8 +48,8 @@ const crearNecesidad = async (req, res) => {
         const listaCorreos = voluntariosResult.rows.map(user => user.email);
 
         if (listaCorreos.length > 0) {
-          await transporter.sendMail({
-            from: `"Conexión Animal" <${process.env.EMAIL_USER}>`, 
+          // Usamos la nueva función en lugar de transporter.sendMail
+          await enviarCorreoGmailAPI({
             to: process.env.EMAIL_USER, 
             bcc: listaCorreos,         
             subject: `🚨 ALERTA URGENTE: ${titulo}`,
@@ -87,10 +76,10 @@ const crearNecesidad = async (req, res) => {
             `
           });
 
-          console.log(`📧 ¡Alerta disparada con éxito a ${listaCorreos.length} voluntarios a través de Gmail!`);
+          console.log(`📧 ¡Alerta disparada con éxito a ${listaCorreos.length} voluntarios a través de Gmail API!`);
         }
       } catch (emailErr) {
-        console.error("❌ Error en el sistema de alertas Nodemailer:", emailErr);
+        console.error("❌ Error en el sistema de alertas (Gmail API):", emailErr.message);
       }
     }
 
