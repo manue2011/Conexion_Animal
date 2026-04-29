@@ -53,7 +53,7 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
     try {
       const token = localStorage.getItem('token');
       const payload = {
-        ...animal, // Enviamos todo el objeto para mantener consistencia
+        ...animal, 
         estado: 'adoptado'
       };
 
@@ -74,9 +74,9 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
   };
 
   if (loading && animales.length === 0) return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
       {[...Array(8)].map((_, i) => (
-        <div key={i} className="animate-pulse bg-gray-100 rounded-xl h-24" />
+        <div key={i} className="animate-pulse bg-gray-100 rounded-xl h-64 w-full" />
       ))}
     </div>
   );
@@ -109,58 +109,68 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
         </div>
       ) : (
         <>
-          {/* GRID DE 4 COLUMNAS (xl:grid-cols-4) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+          {/* GRID DE 4 COLUMNAS (xl:grid-cols-4) - GAP AUMENTADO A 4/6 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
             {animales.map((animal) => (
-              <div key={animal.id} className="bg-white border border-gray-100 rounded-xl p-3 flex gap-3 shadow-sm hover:shadow-md transition items-center min-w-0">
+              <div key={animal.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex flex-col shadow-sm hover:shadow-xl transition-all duration-300 group min-w-0">
                 
-                {/* FOTO PEQUEÑA (Mantenemos tu estilo original de 16x16) */}
-                <div className="w-14 h-14 shrink-0 relative">
+                {/* 📸 FOTO ARRIBA - MÁS GRANDE (h-40 en PC) */}
+                <div className="h-40 w-full bg-gray-100 relative overflow-hidden shrink-0">
                   {animal.foto_url ? (
                     <img
                       src={animal.foto_url}
                       alt={animal.nombre}
-                      className="w-full h-full object-cover rounded-lg border border-gray-100"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      loading="lazy"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gray-50 rounded-lg flex items-center justify-center text-[10px] text-gray-400 border border-gray-100">
-                      Sin Foto
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                      <span className="text-3xl">📸</span>
                     </div>
                   )}
                   {animal.urgent && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" title="Urgente" />
+                    <div className="absolute top-2.5 right-2.5 bg-red-600 text-white text-[10px] px-2 py-1 rounded-full font-black animate-pulse shadow-lg uppercase tracking-tighter">
+                        Urgente
+                    </div>
                   )}
                 </div>
 
-                {/* DATOS COMPACTOS */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-col">
-                    <h4 className="text-sm font-bold text-gray-800 truncate" title={animal.nombre}>
+                {/* 📝 DATOS ABAJO - ESPACIADO AUMENTADO */}
+                <div className="p-4 md:p-5 flex flex-col flex-1">
+                  <div className="flex justify-between items-center mb-1.5 gap-2">
+                    <h4 className="text-base md:text-lg font-extrabold text-gray-800 truncate" title={animal.nombre}>
                       {animal.nombre}
                     </h4>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded uppercase">
-                        {animal.especie}
-                      </span>
-                      <span className="text-[9px] text-gray-400 font-medium">
-                         {animal.edad ? `${animal.edad}a` : '?a'}
-                      </span>
-                    </div>
-                    
-                    {/* BOTONES PEQUEÑOS ABAJO */}
-                    <div className="flex gap-2 mt-2">
-                      <button onClick={() => setEditAnimal(animal)} className="text-gray-400 hover:text-blue-500 transition" title="Editar">
-                        ✏️
+                    <span className="text-[10px] bg-blue-50 border border-blue-100 text-blue-700 px-2.5 py-1 rounded-md uppercase font-bold shrink-0">
+                      {animal.especie}
+                    </span>
+                  </div>
+                  
+                  <p className="text-gray-400 text-sm italic mb-5 flex-1">
+                    {animal.edad ? `${animal.edad} años` : 'Edad desconocida'}
+                  </p>
+
+                  {/* 🛠️ BOTONES DE ACCIÓN - MÁS GRANDES (Alineados abajo con border-t) */}
+                  <div className="flex items-center justify-between pt-4 mt-auto border-t border-gray-100">
+                    <button onClick={() => setEditAnimal(animal)} 
+                      className="text-gray-400 hover:text-blue-500 bg-gray-50 hover:bg-blue-50 p-2.5 rounded-lg transition-colors" 
+                      title={`Editar a ${animal.nombre}`}>
+                      <span className="text-base">✏️</span>
+                    </button>
+
+                    {animal.estado !== 'adoptado' && (
+                      <button onClick={() => handleMarkAdopted(animal)} 
+                        className="text-gray-400 hover:text-green-500 bg-gray-50 hover:bg-green-50 p-2.5 rounded-lg transition-colors" 
+                        title={`Marcar adoptado a ${animal.nombre}`}>
+                        <span className="text-base">🏠</span>
                       </button>
-                      {animal.estado !== 'adoptado' && (
-                        <button onClick={() => handleMarkAdopted(animal)} className="text-gray-400 hover:text-green-500 transition" title="Adoptado">
-                          🏠
-                        </button>
-                      )}
-                      <button onClick={() => handleDelete(animal.id)} className="text-gray-400 hover:text-red-500 transition" title="Archivar">
-                        🗑️
-                      </button>
-                    </div>
+                    )}
+
+                    <button onClick={() => handleDelete(animal.id)} 
+                      className="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 p-2.5 rounded-lg transition-colors" 
+                      title={`Archivar a ${animal.nombre}`}>
+                      <span className="text-base">🗑️</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -169,17 +179,19 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
 
           {/* PAGINACIÓN */}
           {total > 8 && (
-            <div className="flex justify-center items-center gap-3 mt-8 pt-6 border-t border-gray-100">
+            <div className="flex justify-center items-center gap-3 mt-10 pb-4 pt-6 border-t border-gray-200">
               <button disabled={page === 1} onClick={() => handlePageChange(page - 1)}
-                className="px-3 py-1.5 rounded-lg border bg-white text-xs font-bold disabled:opacity-30">
-                Anterior
+                className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold text-sm hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+              >
+                ← Anterior
               </button>
-              <span className="text-xs font-bold text-gray-500">
-                {page} / {Math.ceil(total / 8)}
+              <span className="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 rounded-xl">
+                Página {page} de {Math.ceil(total / 8)}
               </span>
               <button disabled={page === Math.ceil(total / 8)} onClick={() => handlePageChange(page + 1)}
-                className="px-3 py-1.5 rounded-lg border bg-white text-xs font-bold disabled:opacity-30">
-                Siguiente
+                className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold text-sm hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+              >
+                Siguiente →
               </button>
             </div>
           )}
