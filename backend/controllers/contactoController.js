@@ -7,6 +7,18 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS  
   }
 });
+console.log('EMAIL_USER:', process.env.EMAIL_USER);
+console.log('EMAIL_PASS existe:', !!process.env.EMAIL_PASS);
+console.log('EMAIL_PASS longitud:', process.env.EMAIL_PASS?.length);
+
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('❌ SMTP ERROR:', error.message, '| Código:', error.code);
+  } else {
+    console.log('✅ SMTP conectado correctamente con:', process.env.EMAIL_USER);
+  }
+});
+
 
 const enviarContacto = async (req, res) => {
   const { nombre, email, mensaje } = req.body;
