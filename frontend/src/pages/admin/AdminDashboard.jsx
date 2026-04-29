@@ -15,6 +15,7 @@ const AdminDashboard = () => {
   const [activeView, setActiveView] = useState('resumen');
   const [refreshList, setRefreshList] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [animalAEditar, setAnimalAEditar] = useState(null);
 
   const [isNeedModalOpen, setIsNeedModalOpen] = useState(false);
   const [isSubmittingNeed, setIsSubmittingNeed] = useState(false);
@@ -48,6 +49,10 @@ const AdminDashboard = () => {
     }
   }, []);
 
+  const handleEditAnimal = (animal) => {
+    setAnimalAEditar(animal);
+    setActiveView('registrar'); 
+  };
   useEffect(() => {
     const userData = localStorage.getItem('user');
     const token = localStorage.getItem('token');
@@ -160,8 +165,9 @@ const AdminDashboard = () => {
           </h2>
         </div>
         <nav className="flex-1 p-4 space-y-2">
+          <button onClick={() => { setActiveView('animales'); setSidebarOpen(false); }} className={`w-full text-left py-3 px-4 rounded transition flex items-center gap-3 ${activeView === 'animales' ? 'bg-blue-600' : 'hover:bg-slate-700 text-gray-300'}`}>🐾 Inventario</button>
+          <button onClick={() => { setActiveView('registrar'); setSidebarOpen(false); }} className={`w-full text-left py-3 px-4 rounded transition flex items-center gap-3 ${activeView === 'registrar' ? 'bg-blue-600' : 'hover:bg-slate-700 text-gray-300'}`}>➕ Registrar Animal</button> 
           <button onClick={() => { setActiveView('resumen'); setSidebarOpen(false); }} className={`w-full text-left py-3 px-4 rounded transition flex items-center gap-3 ${activeView === 'resumen' ? 'bg-blue-600' : 'hover:bg-slate-700 text-gray-300'}`}>📊 Resumen</button>
-          <button onClick={() => { setActiveView('animales'); setSidebarOpen(false); }} className={`w-full text-left py-3 px-4 rounded transition flex items-center gap-3 ${activeView === 'animales' ? 'bg-blue-600' : 'hover:bg-slate-700 text-gray-300'}`}>🐾 Animales</button>
           <button onClick={() => { setActiveView('solicitudes'); setSidebarOpen(false); }} className={`w-full text-left py-3 px-4 rounded transition flex items-center gap-3 ${activeView === 'solicitudes' ? 'bg-blue-600' : 'hover:bg-slate-700 text-gray-300'}`}>💌 Solicitudes</button>
           <button onClick={() => { setIsProfileModalOpen(true); setSidebarOpen(false); }} className="w-full text-left py-3 px-4 rounded transition flex items-center gap-3 hover:bg-slate-700 text-gray-300">⚙️ Configuración</button>
           <button onClick={() => { setIsNeedModalOpen(true); setSidebarOpen(false); }} className="w-full text-left px-4 py-3 rounded-lg font-bold mt-4 transition shadow-md flex justify-between items-center bg-red-600 hover:bg-red-700 text-white"><span>🚨 Pedir Ayuda</span></button>
@@ -183,6 +189,7 @@ const AdminDashboard = () => {
             {activeView === 'solicitudes' && 'Adopciones'}
             {activeView === 'plan' && 'Suscripción y Límites'}
             {activeView === 'soporte' && 'Soporte VIP'}
+            {activeView === 'registrar' && 'Registrar Animal'}
           </h1>
           <div className="text-sm text-gray-500 bg-white px-4 py-2 rounded-full shadow self-start sm:self-auto">
             Usuario: <span className="font-bold text-blue-600">{user.email}</span>
@@ -212,13 +219,28 @@ const AdminDashboard = () => {
                 <button onClick={() => setIsProfileModalOpen(true)} className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">Completar Perfil</button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <AnimalForm onSuccess={triggerRefresh} />
-                <AnimalList refreshTrigger={refreshList} />
-              </div>
+             <AnimalList refreshTrigger={refreshList} setEditAnimal={handleEditAnimal} />
             )}
           </div>
         )}
+
+          {activeView === 'registrar' && (
+            <div className="animate-fade-in max-w-2xl">
+              {!protectoraInfo?.direccion ? (
+                <div className="bg-white p-10 rounded-xl shadow text-center">
+                  <p className="text-5xl mb-4">🚫</p>
+                  <h2 className="text-2xl font-bold text-gray-800">Acceso Restringido</h2>
+                  <p className="text-gray-500 mt-2">Debes completar la dirección de la protectora antes de subir animales.</p>
+                  <button onClick={() => setIsProfileModalOpen(true)} className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">Completar Perfil</button>
+                </div>
+              ) : (
+               <AnimalForm animalAEditar={animalAEditar} onSuccess={() => { triggerRefresh();  setActiveView('animales'); setAnimalAEditar(null);  }} onCancel={() => {
+              setActiveView('animales'); 
+              setAnimalAEditar(null);    
+        }} />
+              )}
+            </div>
+          )}
 
         {activeView === 'solicitudes' && (
           <div className="bg-white p-4 md:p-6 rounded-lg shadow-md">
@@ -240,7 +262,7 @@ const AdminDashboard = () => {
                 <div className="bg-blue-600 p-2 rounded-lg text-white">📧</div>
                 <div>
                   <p className="text-xs font-bold text-blue-800 uppercase text-left">Email Prioritario</p>
-                  <p className="text-blue-900 font-medium text-left">conexionanimal2026@outlook.com</p>
+                  <p className="text-blue-900 font-medium text-left">conexionanimal2028@gmail.com</p>
                 </div>
               </div>
               <div className="p-4 bg-green-50 rounded-xl border border-green-100 flex items-center gap-4">

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-const AnimalForm = ({ onSuccess }) => {
+// Añadimos animalAEditar y onCancel a los props
+const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
   let user = {};
   try {
     user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -18,6 +19,23 @@ const AnimalForm = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
+  useEffect(() => {
+    if (animalAEditar) {
+      setFormData({
+        nombre: animalAEditar.nombre || '',
+        descripcion: animalAEditar.descripcion || '',
+        edad: animalAEditar.edad || '',
+        especie: animalAEditar.especie || '',
+        ubicacion: animalAEditar.ubicacion || '',
+        urgent: animalAEditar.urgent || false
+      });
+      setFile(null); 
+    } else {
+      setFormData({ nombre: '', descripcion: '', edad: '', especie: '', ubicacion: '', urgent: false });
+      setFile(null);
+    }
+  }, [animalAEditar]);
+
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setFormData({ ...formData, [e.target.name]: value });
@@ -30,22 +48,31 @@ const AnimalForm = ({ onSuccess }) => {
     setLoading(true);
     setMessage(null);
     try {
-      const data = new FormData();
-      Object.entries(formData).forEach(([k, v]) => data.append(k, v));
-      if (file) data.append('foto_url', file);
-
       const token = localStorage.getItem('token');
-      await axios.post(`${API_URL}/api/animales`, data, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-      });
 
-      setMessage({ type: 'success', text: '¡Animal registrado correctamente!' });
-      setFormData({ nombre: '', descripcion: '', edad: '', especie: '', ubicacion: '', urgent: false });
-      setFile(null);
+      if (animalAEditar) {
+        await axios.put(`${API_URL}/api/animales/${animalAEditar.id}`, formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMessage({ type: 'success', text: '¡Animal actualizado correctamente!' });
+      } else {
+        const data = new FormData();
+        Object.entries(formData).forEach(([k, v]) => data.append(k, v));
+        if (file) data.append('foto_url', file);
+
+        await axios.post(`${API_URL}/api/animales`, data, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+        });
+        setMessage({ type: 'success', text: '¡Animal registrado correctamente!' });
+
+        setFormData({ nombre: '', descripcion: '', edad: '', especie: '', ubicacion: '', urgent: false });
+        setFile(null);
+      }
+
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error(error);
-      setMessage({ type: 'error', text: 'Error al subir el animal.' });
+      setMessage({ type: 'error', text: animalAEditar ? 'Error al actualizar.' : 'Error al subir el animal.' });
     } finally {
       setLoading(false);
     }
@@ -53,7 +80,21 @@ const AnimalForm = ({ onSuccess }) => {
 
   return (
     <div className="bg-white p-4 md:p-6 rounded-xl shadow-md">
-      <h3 className="text-base md:text-xl font-bold mb-4 text-gray-700">Registrar Nuevo Animal</h3>
+      {/* Título dinámico */}
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-base md:text-xl font-bold text-gray-700">
+          {animalAEditar ? '✏️ Editar Animal' : 'Registrar Nuevo Animal'}
+        </h3>
+        {animalAEditar && (
+          <button 
+            type="button" 
+            onClick={onCancel}
+            className="text-gray-400 hover:text-gray-600 font-bold text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-lg transition"
+          >
+            ✕ Cancelar
+          </button>
+        )}
+      </div>
 
       {message && (
         <div className={`p-3 mb-4 rounded-lg text-white text-center text-sm font-medium ${message.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
@@ -62,8 +103,6 @@ const AnimalForm = ({ onSuccess }) => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
-
-    
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre</label>
@@ -96,7 +135,6 @@ const AnimalForm = ({ onSuccess }) => {
           </div>
         </div>
 
-    
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Edad (años)</label>
@@ -124,7 +162,6 @@ const AnimalForm = ({ onSuccess }) => {
           </div>
         </div>
 
-        {/* DESCRIPCIÓN */}
         <div>
           <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Descripción</label>
           <textarea
@@ -136,7 +173,6 @@ const AnimalForm = ({ onSuccess }) => {
           />
         </div>
 
-       
         {(user?.role === 'admin' || user?.role === 'superadmin') && (
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">📍 Ubicación</label>
@@ -152,24 +188,33 @@ const AnimalForm = ({ onSuccess }) => {
           </div>
         )}
 
-      
-        <div className="border-2 border-dashed border-gray-300 p-3 md:p-4 rounded-lg text-center">
-          <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Foto</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="block w-full text-xs md:text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          />
-        </div>
+        {/* CUIDADO AQUÍ: Solo mostramos la foto si NO estamos editando */}
+        {!animalAEditar ? (
+          <div className="border-2 border-dashed border-gray-300 p-3 md:p-4 rounded-lg text-center">
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Foto</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="block w-full text-xs md:text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+          </div>
+        ) : (
+          <div className="bg-yellow-50 p-3 rounded-lg text-yellow-700 text-xs text-center border border-yellow-200">
+            ℹ️ La foto no se puede modificar desde el modo edición actualmente.
+          </div>
+        )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full py-3 px-4 rounded-lg text-white font-bold text-sm transition-all active:scale-95 ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
-        >
-          {loading ? 'Subiendo...' : 'Guardar Animal'}
-        </button>
+        {/* Botones dinámicos */}
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full py-3 px-4 rounded-lg text-white font-bold text-sm transition-all active:scale-95 ${loading ? 'bg-gray-400 cursor-not-allowed' : (animalAEditar ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700')}`}
+          >
+            {loading ? 'Procesando...' : (animalAEditar ? 'Guardar Cambios' : 'Guardar Animal')}
+          </button>
+        </div>
       </form>
     </div>
   );
