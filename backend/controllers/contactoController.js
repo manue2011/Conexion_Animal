@@ -1,14 +1,16 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',  // explícito en lugar de service: 'gmail'
-  port: 587,               // 587 en lugar de 465
-  secure: false,           // false para STARTTLS en puerto 587
+  host: '74.125.133.108',
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
-  family: 4                // 👈 fuerza IPv4, evita el problema de IPv6
+  tls: {
+    servername: 'smtp.gmail.com'
+  }
 });
 
 transporter.verify((error, success) => {
