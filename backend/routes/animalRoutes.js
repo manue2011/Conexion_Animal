@@ -7,7 +7,7 @@ const {
   deleteAnimal,
   getPublicAnimals,
   getAnimalById,
-  getAdoptados // Asegúrate de que esto está bien escrito en el controller
+  getAdoptados 
 } = require("../controllers/animalController");
 
 const { verifyToken, checkAnimalLimit } = require("../middleware/authMiddleware");
@@ -15,7 +15,7 @@ const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
 
 // --- 1. RUTAS PÚBLICAS (Sin token) ---
-router.get("/adoptados", getAdoptados); // <-- Ponla la primera de todas
+router.get("/adoptados", getAdoptados);
 router.get("/public", getPublicAnimals);
 router.get("/public/:id", getAnimalById);
 

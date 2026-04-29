@@ -3,10 +3,9 @@ const pool = require('../config/db');
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const getSubscriptionStatus = async (req, res) => {
-  const userId = req.user.id; // Este es el ID del usuario (UUID)
+  const userId = req.user.id; 
 
   try {
-    // 1. Buscamos el usuario y sus relaciones
     const userResult = await pool.query(
       `SELECT u.plan, u.role, 
         (SELECT protectora_id FROM protectora_admins WHERE user_id = u.id LIMIT 1) as protectora_id,
@@ -27,9 +26,6 @@ const getSubscriptionStatus = async (req, res) => {
     );
     const usedPosts = postsCount.rows[0].count;
 
-    // 3. LÓGICA DE RESPUESTA
-    
-    // CASO A: COLONIAS (Gestores)
     if (user.role === 'gestor' || user.colonia_id) {
       const animalsCount = await pool.query(
         "SELECT COUNT(*)::INT FROM animales WHERE colonia_id = $1 AND estado = 'activo'",
@@ -101,7 +97,7 @@ const createCheckoutSession = async (req, res) => {
       payment_method_types: ['card'],
       mode: 'subscription',
       customer_email: req.user.email,
-      client_reference_id: req.user.id, // Guardamos el ID del usuario para el webhook
+      client_reference_id: req.user.id, 
       line_items: [{
         price_data: {
           currency: 'eur',
@@ -131,14 +127,12 @@ const handleStripeWebhook = async (req, res) => {
   let event;
 
   try {
-    // Verificamos que la petición viene de Stripe y no de un hacker
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error("Webhook Error de firma:", err.message);
     return res.status(400).json({ message: `Webhook Error: ${err.message}` });
   }
 
-  // Cuando el pago se completa, actualizamos el plan a 'pro'
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const userId = session.client_reference_id;

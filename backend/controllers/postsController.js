@@ -8,7 +8,6 @@ const crearPost = async (req, res) => {
   try {
     let prioridadFinal = 'normal';
 
-    // 1. Lógica de prioridad (Ya la tenías, está perfecta)
     if (prioridad === 'destacado') {
       if (userRole === 'gestor' || userRole === 'admin' || userPlan === 'pro') {
         prioridadFinal = 'destacado';
@@ -95,10 +94,9 @@ const obtenerPendientes = async (req, res) => {
   }
 };
 
-// 4. MODERAR POST (Solo superAdmins)
 const moderarPost = async (req, res) => {
   const { id } = req.params;
-  const { nuevoEstado } = req.body; // Esperamos 'approved' o 'rejected'
+  const { nuevoEstado } = req.body; 
 
   if (!['approved', 'rejected'].includes(nuevoEstado)) {
     return res.status(400).json({ error: "Estado no válido. Usa 'approved' o 'rejected'." });

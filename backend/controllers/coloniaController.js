@@ -1,6 +1,5 @@
 const pool = require('../config/db');
 
-// 1. Obtener la(s) colonia(s) del Gestor logueado
 const getMisColonias = async (req, res) => {
   try {
     const gestor_id = req.user.id; // Viene del token JWT
@@ -17,14 +16,12 @@ const getMisColonias = async (req, res) => {
   }
 };
 
-// 2. Completar/Actualizar los datos de la colonia (Mapa, descripción...)
 const updateColonia = async (req, res) => {
   try {
-    const { id } = req.params; // El ID de la colonia
+    const { id } = req.params; 
     const { nombre, direccion, descripcion } = req.body;
     const gestor_id = req.user.id;
 
-    // Actualizamos SOLO si la colonia pertenece a este gestor
     const result = await pool.query(
       `UPDATE colonias 
        SET nombre = $1, direccion = $2, descripcion = $3 
@@ -33,7 +30,6 @@ const updateColonia = async (req, res) => {
       [nombre, direccion, descripcion, id, gestor_id]
     );
 
-    // Si no devuelve nada, es que intentó editar una colonia que no es suya
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "Colonia no encontrada o acceso denegado" });
     }
@@ -45,7 +41,6 @@ const updateColonia = async (req, res) => {
   }
 };
 
-// 3. Obtener TODAS las colonias para el Mapa Público de la web
 const getAllColonias = async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM colonias WHERE estado = 'activo'");

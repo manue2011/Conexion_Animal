@@ -1,6 +1,5 @@
 const pool = require('../config/db');
 
-// 1. SOLICITAR ROL (Para usuarios que quieren ser Admin/Gestor)
 const solicitarRol = async (req, res) => {
   const { rol_solicitado, mensaje, telefono, entidad_solicitada } = req.body;
   const user_id = req.user.id; 
@@ -17,13 +16,11 @@ const solicitarRol = async (req, res) => {
       });
     }
 
-    // Actualizamos contacto en la tabla users
     await pool.query(
       "UPDATE users SET telefono = $1, entidad_solicitada = $2 WHERE id = $3",
       [telefono, entidad_solicitada, user_id]
     );
 
-    // Insertamos la solicitud
     await pool.query(
       "INSERT INTO solicitudes_rol (user_id, rol_solicitado, mensaje) VALUES ($1, $2, $3)",
       [user_id, rol_solicitado, mensaje]
@@ -37,7 +34,6 @@ const solicitarRol = async (req, res) => {
   }
 };
 
-// 2. OBTENER MI COLONIA (Para el Dashboard del Gestor)
 const getMiColonia = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -56,10 +52,8 @@ const getMiColonia = async (req, res) => {
   }
 };
 
-// 3. ACTUALIZAR DATOS DE COLONIA (¡NUEVA! Para completar latitud/longitud)
 const updateColonia = async (req, res) => {
   const { id } = req.params;
-  // 👇 1. Extraemos también el codigo_postal del frontend
   const { descripcion, direccion, codigo_postal } = req.body; 
   const userId = req.user.id;
 
@@ -70,7 +64,6 @@ const updateColonia = async (req, res) => {
       return res.status(403).json({ message: "No tienes permiso" });
     }
 
-    // 👇 2. Actualizamos la consulta SQL (codigo_postal es $3, y el id pasa a ser $4)
     await pool.query(
       "UPDATE colonias SET descripcion = $1, direccion = $2, codigo_postal = $3 WHERE id = $4",
       [descripcion, direccion, codigo_postal, id]
@@ -81,11 +74,9 @@ const updateColonia = async (req, res) => {
     res.status(500).json({ message: "Error al actualizar" });
   }
 };
-// OBTENER MI PROTECTORA
 const getMiProtectora = async (req, res) => {
   try {
     const userId = req.user.id;
-    // Buscamos en la tabla puente protectora_admins
     const result = await pool.query(
       `SELECT p.* FROM protectoras p 
        JOIN protectora_admins pa ON p.id = pa.protectora_id 
@@ -102,14 +93,12 @@ const getMiProtectora = async (req, res) => {
   }
 };
 
-// ACTUALIZAR PROTECTORA
 const updateProtectora = async (req, res) => {
   const { id } = req.params;
   const { descripcion, direccion, telefono } = req.body;
   const userId = req.user.id;
 
   try {
-    // Verificamos propiedad
     const check = await pool.query("SELECT * FROM protectora_admins WHERE protectora_id = $1 AND user_id = $2", [id, userId]);
     if (check.rows.length === 0) return res.status(403).json({ message: "No autorizado" });
 
@@ -127,7 +116,6 @@ const updateProtectora = async (req, res) => {
 
 const getPublicColonias = async (req, res) => {
   try {
-    // Solo mostramos las colonias activas
     const result = await pool.query(
       "SELECT id, nombre, descripcion, direccion, codigo_postal FROM colonias WHERE estado = 'activo'"
     );

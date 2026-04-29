@@ -27,14 +27,12 @@ const getPendingRequests = async (req, res) => {
   }
 };
 
-// 3. Procesar la solicitud (El motor principal)
 const procesarSolicitud = async (req, res) => {
   const { id } = req.params; 
-  // Capturamos lo que nos manda el Modal de React:
   const { accion, vinculoModo, entidadId, entidadNombre } = req.body; 
 
   try {
-    await pool.query('BEGIN'); // Iniciamos transacción segura
+    await pool.query('BEGIN'); 
 
     const solicitudResult = await pool.query('SELECT * FROM solicitudes_rol WHERE id = $1', [id]);
     if (solicitudResult.rows.length === 0) {
@@ -61,7 +59,7 @@ const procesarSolicitud = async (req, res) => {
       const telefonoUsuario = userResult.rows[0]?.telefono || null;
 
       if (rol === 'admin') {
-        let idProtectora = entidadId; // Si es 'existente', usamos el ID que viene de React
+        let idProtectora = entidadId; 
 
         if (vinculoModo === 'nueva') {
           const nuevaProt = await pool.query(
@@ -79,13 +77,11 @@ const procesarSolicitud = async (req, res) => {
       
       else if (rol === 'gestor') {
         if (vinculoModo === 'nueva') {
-          // En tu BD, el gestor_id va directamente en la tabla de la colonia
           await pool.query(
             "INSERT INTO colonias (nombre, gestor_id) VALUES ($1, $2)",
             [entidadNombre, userId]
           );
         } else if (vinculoModo === 'existente') {
-          // Si te vinculan a una existente, te pisa como el nuevo gestor
           await pool.query(
             "UPDATE colonias SET gestor_id = $1 WHERE id = $2",
             [userId, entidadId]
@@ -93,16 +89,14 @@ const procesarSolicitud = async (req, res) => {
         }
       }
 
-      // 3. Ascendemos al usuario y lo desbloqueamos (verificado = true)
       await pool.query(
         "UPDATE users SET role = $1, verificado = true WHERE id = $2", 
         [rol, userId]
       );
 
-      // 4. Marcamos la solicitud como aprobada
       await pool.query("UPDATE solicitudes_rol SET estado = 'aprobado' WHERE id = $1", [id]);
       
-      await pool.query('COMMIT'); // Guardamos todo definitivamente
+      await pool.query('COMMIT'); 
       return res.json({ message: `¡Usuario ascendido y vinculado con éxito!` });
     }
 
@@ -110,13 +104,12 @@ const procesarSolicitud = async (req, res) => {
     res.status(400).json({ message: 'Acción no válida' });
 
   } catch (err) {
-    await pool.query('ROLLBACK'); // Si algo peta, no se guarda nada a medias
+    await pool.query('ROLLBACK'); 
     console.error('Error al procesar solicitud:', err);
     res.status(500).json({ message: 'Error en el servidor al procesar la solicitud' });
   }
 };
 
-// Obtener las listas para los desplegables del SuperAdmin
 const getEntidadesExistentes = async (req, res) => {
   try {
     // Sacamos las protectoras
@@ -190,7 +183,7 @@ const obtenerListadoEntidades = async (req, res) => {
   }
 };
 const actualizarEntidad = async (req, res) => {
-  const { tipo, id } = req.params; // tipo: 'protectoras' o 'colonias'
+  const { tipo, id } = req.params; 
   const { nombre, direccion, descripcion, estado, codigo_postal } = req.body;
 
   try {
@@ -212,7 +205,6 @@ const actualizarEntidad = async (req, res) => {
   }
 };
 
-// Obtener lista de todos los SuperAdmins actuales
 const obtenerStaff = async (req, res) => {
   try {
     const result = await pool.query(
@@ -224,7 +216,6 @@ const obtenerStaff = async (req, res) => {
   }
 };
 const asignarSuperAdmin = async (req, res) => {
-  // .trim() elimina espacios accidentales al principio o final
   const email = req.body.email ? req.body.email.trim() : null;
 
   if (!email) {
@@ -232,13 +223,11 @@ const asignarSuperAdmin = async (req, res) => {
   }
 
   try {
-    // Usamos ILIKE para que no importe si escribes Mayúsculas o Minúsculas
     const result = await pool.query(
       "UPDATE users SET role = 'superadmin', verificado = true WHERE email ILIKE $1 RETURNING id, email, role",
       [email]
     );
 
-    // Si rowCount es 0, es que ese email NO existe en la tabla 'users'
     if (result.rowCount === 0) {
       return res.status(400).json({ 
         message: `No se encontró ningún usuario con el email: ${email}. Asegúrate de que se haya registrado primero.` 

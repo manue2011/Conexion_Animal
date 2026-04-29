@@ -4,7 +4,6 @@ const cloudinary = require("../config/cloudinary");
 // 1. CREAR ANIMAL
 const createAnimal = async (req, res) => {
   try {
-    // 1. Extraemos también 'ubicacion' del cuerpo
     const { nombre, descripcion, edad, especie, urgent, ubicacion } = req.body;
     const { id: userId, role: userRole } = req.user;
 
@@ -18,7 +17,6 @@ const createAnimal = async (req, res) => {
 
     let targetColumn, idSubquery;
 
-    //  IMPORTANTE: Cambiamos $7 por $8 porque 'ubicacion' ocupará el puesto $7
     if (userRole === 'admin') {
       targetColumn = 'protectora_id';
       idSubquery = `(SELECT protectora_id FROM protectora_admins WHERE user_id = $8 LIMIT 1)`;
@@ -30,13 +28,11 @@ const createAnimal = async (req, res) => {
       idSubquery = `(SELECT id FROM protectoras LIMIT 1)`;
     }
 
-    // 2. Añadimos 'ubicacion' a la lista de columnas y valores ($7)
     const query = `
       INSERT INTO animales (nombre, descripcion, edad, especie, urgent, foto_url, ubicacion, ${targetColumn}, estado) 
       VALUES ($1, $2, $3, $4, $5, $6, $7, ${idSubquery}, 'activo') 
       RETURNING *`;
 
-    // 3. Añadimos 'ubicacion' al array de params antes del userId
     const params = [
       nombre, 
       descripcion, 
@@ -153,7 +149,6 @@ const deleteAnimal = async (req, res) => {
       count++;
     }
 
-    // Total de resultados para calcular páginas en el frontend
     const totalResult = await pool.query(countQuery, params);
     const total = parseInt(totalResult.rows[0].count);
 

@@ -1,4 +1,3 @@
-// Archivo: backend/routes/adopcionRoutes.js
 const router = require('express').Router();
 const { crearSolicitud, getSolicitudes, updateSolicitud, getMisSolicitudes } = require('../controllers/adopcionController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');

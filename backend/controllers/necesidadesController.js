@@ -14,7 +14,6 @@ const crearNecesidad = async (req, res) => {
   const publicador_id = req.user.id; 
 
   try {
-    // 1. Guardamos la necesidad en la Base de Datos
     const result = await pool.query(
       `INSERT INTO necesidades 
       (publicador_id, protectora_id, colonia_id, titulo, descripcion, categoria, prioridad) 
@@ -25,7 +24,6 @@ const crearNecesidad = async (req, res) => {
     // 2. SISTEMA DE ALERTAS CON GMAIL
     if (prioridad === 'urgente') {
       try {
-        // --- BUSCAR DATOS DE LA ENTIDAD ---
         let nombreEntidad = "Entidad no especificada";
         let direccionEntidad = "Dirección no disponible";
         let contactoEntidad = "Contactar por la plataforma";

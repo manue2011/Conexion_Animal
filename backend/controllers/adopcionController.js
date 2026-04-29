@@ -64,7 +64,6 @@ const getSolicitudes = async (req, res) => {
       params = [userId];
     } 
     else if (userRole === 'superadmin') {
-      // El SuperAdmin no tiene WHERE, lo ve todo
     } 
     else {
       // Si no es ninguno, no debería ver nada

@@ -85,7 +85,6 @@ const register = async (req, res) => {
     if (userExist.rows.length > 0) {
       const userRecord = userExist.rows[0];
       
-      // Si el usuario ya está verificado, no le dejamos registrarse de nuevo
       if (userRecord.verificado) {
         return res.status(400).json({ message: 'Este correo ya está registrado. Inicia sesión.' });
       }
@@ -113,7 +112,6 @@ const register = async (req, res) => {
       );
 
     } else {
-      // Si es la primera vez que se registra, lo insertamos como no verificado
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(password, salt);
 
@@ -123,7 +121,7 @@ const register = async (req, res) => {
       );
     }
 
-    // --- ENVIAR CORREO CON EL CÓDIGO ---
+   
     try {
       await transporter.sendMail({
         from: `"Conexión Animal" <${process.env.EMAIL_USER}>`,
@@ -187,7 +185,6 @@ const verifyEmail = async (req, res) => {
       return res.status(400).json({ message: 'El código ha caducado (duraba 15 min). Vuelve atrás para solicitar otro.' });
     }
 
-    // ¡ÉXITO! Verificamos al usuario y borramos el PIN
     const updatedUser = await pool.query(
       'UPDATE users SET verificado = true, verification_pin = NULL, pin_expires_at = NULL WHERE email = $1 RETURNING id, email, role, plan',
       [emailLimpio]
@@ -235,7 +232,6 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Credenciales inválidas' });
     }
 
-    // --- NUEVA REGLA: Bloquear si no ha pasado el proceso del PIN ---
  if (!user.rows[0].verificado) {
   return res.status(403).json({ 
     message: 'Tu cuenta no está verificada. Intenta registrarte de nuevo para recibir un código al correo.' 
@@ -307,7 +303,7 @@ const resendPin = async (req, res) => {
     }
 
   
-    const pin = generatePIN(); // Asume que tienes tu función generatePIN() arriba
+    const pin = generatePIN(); 
     const expiresAt = new Date(Date.now() + 15 * 60000);
 
     await pool.query(
@@ -351,14 +347,12 @@ const forgotPassword = async (req, res) => {
     const emailLimpio = validator.normalizeEmail(email);
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [emailLimpio]);
 
-    // Siempre respondemos igual para no revelar si el email existe
     if (result.rows.length === 0 || !result.rows[0].verificado) {
       return res.status(200).json({ message: 'Si el correo existe, recibirás un enlace en breve.' });
     }
 
     const user = result.rows[0];
 
-    // Anti-spam: si ya tiene un token válido de hace menos de 5 minutos, bloqueamos
     if (user.reset_token_expires_at && user.reset_token_expires_at > new Date()) {
       const expiracion = new Date(user.reset_token_expires_at).getTime();
       const tiempoPasado = (15 * 60000) - (expiracion - Date.now());
@@ -367,7 +361,6 @@ const forgotPassword = async (req, res) => {
       }
     }
 
-    // Generamos token seguro y su expiración (15 minutos)
     const resetToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 15 * 60000);
 
