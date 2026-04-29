@@ -1,15 +1,15 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail', 
+  host: 'smtp.gmail.com',  // explícito en lugar de service: 'gmail'
+  port: 587,               // 587 en lugar de 465
+  secure: false,           // false para STARTTLS en puerto 587
   auth: {
-    user: process.env.EMAIL_USER, 
-    pass: process.env.EMAIL_PASS  
-  }
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  },
+  family: 4                // 👈 fuerza IPv4, evita el problema de IPv6
 });
-console.log('EMAIL_USER:', process.env.EMAIL_USER);
-console.log('EMAIL_PASS existe:', !!process.env.EMAIL_PASS);
-console.log('EMAIL_PASS longitud:', process.env.EMAIL_PASS?.length);
 
 transporter.verify((error, success) => {
   if (error) {
