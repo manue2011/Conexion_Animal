@@ -32,7 +32,6 @@ const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
         urgent: animalAEditar.urgent || false
       });
       setFile(null);
-      // Si estamos editando y hay foto, mostramos esa foto en la vista previa
       setPreviewUrl(animalAEditar.foto_url || null);
     } else {
       setFormData({ nombre: '', descripcion: '', edad: '', especie: '', ubicacion: '', urgent: false });
@@ -65,9 +64,13 @@ const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
     setMessage(null);
     try {
       const token = localStorage.getItem('token');
+        if (animalAEditar) {
+        const payload = {
+          ...formData,
+          estado: animalAEditar.estado || 'activo'
+        };
 
-      if (animalAEditar) {
-        await axios.put(`${API_URL}/api/animales/${animalAEditar.id}`, formData, {
+        await axios.put(`${API_URL}/api/animales/${animalAEditar.id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setMessage({ type: 'success', text: '¡Animal actualizado correctamente!' });
