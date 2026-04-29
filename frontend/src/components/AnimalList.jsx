@@ -3,7 +3,6 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// IMPORTANTE: Asegúrate de pasar setEditAnimal desde el componente padre
 const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
   const [animales, setAnimales] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,7 +12,7 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
   const [filtroFecha, setFiltroFecha] = useState('desc');
 
   const fetchAnimales = async () => {
-    setLoading(true); // Mostrar carga al aplicar filtros
+    setLoading(true);
     try {
       const token = localStorage.getItem('token');
       const params = new URLSearchParams({ page, limit: 8, order: filtroFecha });
@@ -49,16 +48,12 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
     }
   };
 
- const handleMarkAdopted = async (animal) => {
+  const handleMarkAdopted = async (animal) => {
     if (!window.confirm(`¿Seguro que quieres marcar a ${animal.nombre} como adoptado?`)) return;
     try {
       const token = localStorage.getItem('token');
       const payload = {
-        nombre: animal.nombre,
-        descripcion: animal.descripcion,
-        edad: animal.edad,
-        especie: animal.especie,
-        urgent: animal.urgent,
+        ...animal, // Enviamos todo el objeto para mantener consistencia
         estado: 'adoptado'
       };
 
@@ -73,10 +68,15 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
     }
   };
 
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (loading && animales.length === 0) return (
-    <div className="space-y-3">
-      {[...Array(3)].map((_, i) => (
-        <div key={i} className="animate-pulse bg-gray-100 rounded-lg h-24" />
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+      {[...Array(8)].map((_, i) => (
+        <div key={i} className="animate-pulse bg-gray-100 rounded-xl h-24" />
       ))}
     </div>
   );
@@ -84,9 +84,9 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
   return (
     <div className="flex flex-col w-full">
       {/* FILTROS */}
-      <div className="flex gap-3 mb-4 flex-wrap">
+      <div className="flex gap-3 mb-6 flex-wrap">
         <select value={filtroEspecie} onChange={e => setFiltroEspecie(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm bg-white">
+          className="border rounded-lg px-3 py-2 text-sm bg-white shadow-sm outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">Todas las especies</option>
           <option value="perro">Perro</option>
           <option value="gato">Gato</option>
@@ -96,80 +96,68 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
           <option value="otro">Otro</option>
         </select>
         <select value={filtroFecha} onChange={e => setFiltroFecha(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm bg-white">
+          className="border rounded-lg px-3 py-2 text-sm bg-white shadow-sm outline-none focus:ring-2 focus:ring-blue-500">
           <option value="desc">Más recientes</option>
           <option value="asc">Más antiguos</option>
         </select>
       </div>
 
-      {/* ESTADO VACÍO (Movido aquí para que no borre los filtros de la pantalla) */}
+      {/* ESTADO VACÍO */}
       {animales.length === 0 ? (
-        <div className="bg-yellow-50 p-4 rounded-lg text-yellow-700 text-sm text-center border border-yellow-200">
-          No hay animales. ¡Añade uno o cambia los filtros de búsqueda!
+        <div className="bg-yellow-50 p-6 rounded-xl text-yellow-700 text-center border border-yellow-200">
+          <p className="font-bold">No hay animales activos.</p>
         </div>
       ) : (
         <>
-          {/* LISTA GRID */}
-          <div className="grid grid-cols-1 gap-3 overflow-y-auto max-h-[550px] pr-1">
+          {/* GRID DE 4 COLUMNAS (xl:grid-cols-4) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
             {animales.map((animal) => (
-              <div key={animal.id} className="bg-white border border-gray-100 rounded-lg p-3 md:p-4 flex gap-3 shadow-sm hover:shadow-md transition items-center">
-
-                {/* FOTO */}
-                <div className="w-16 h-16 md:w-20 md:h-20 shrink-0">
+              <div key={animal.id} className="bg-white border border-gray-100 rounded-xl p-3 flex gap-3 shadow-sm hover:shadow-md transition items-center min-w-0">
+                
+                {/* FOTO PEQUEÑA (Mantenemos tu estilo original de 16x16) */}
+                <div className="w-14 h-14 shrink-0 relative">
                   {animal.foto_url ? (
                     <img
                       src={animal.foto_url}
                       alt={animal.nombre}
-                      className="w-full h-full object-cover rounded-md border border-gray-100"
-                      loading="lazy"
+                      className="w-full h-full object-cover rounded-lg border border-gray-100"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gray-100 rounded-md flex items-center justify-center text-gray-400 text-[10px] text-center p-1">
+                    <div className="w-full h-full bg-gray-50 rounded-lg flex items-center justify-center text-[10px] text-gray-400 border border-gray-100">
                       Sin Foto
                     </div>
                   )}
+                  {animal.urgent && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" title="Urgente" />
+                  )}
                 </div>
 
-                {/* DATOS */}
+                {/* DATOS COMPACTOS */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="min-w-0">
-                      <h4 className="text-sm md:text-base font-bold text-gray-800 truncate">{animal.nombre}</h4>
-                      <div className="flex flex-wrap gap-1.5 mt-1">
-                        <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full uppercase font-bold">
-                          {animal.especie}
-                        </span>
-                        {animal.urgent && (
-                          <span className="text-[10px] bg-red-100 text-red-800 px-2 py-0.5 rounded-full font-bold animate-pulse">
-                            URGENTE
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-gray-400 text-[11px] mt-1.5 italic">
-                        {animal.edad ? `${animal.edad} años` : 'Edad desconocida'}
-                      </p>
+                  <div className="flex flex-col">
+                    <h4 className="text-sm font-bold text-gray-800 truncate" title={animal.nombre}>
+                      {animal.nombre}
+                    </h4>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded uppercase">
+                        {animal.especie}
+                      </span>
+                      <span className="text-[9px] text-gray-400 font-medium">
+                         {animal.edad ? `${animal.edad}a` : '?a'}
+                      </span>
                     </div>
-
-                    {/* BOTONES DE ACCIÓN AGRUPADOS */}
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => setEditAnimal(animal)}
-                        className="text-blue-400 hover:text-blue-600 p-1.5 rounded-full hover:bg-blue-50 transition"
-                        aria-label={`Editar ${animal.nombre}`}>
+                    
+                    {/* BOTONES PEQUEÑOS ABAJO */}
+                    <div className="flex gap-2 mt-2">
+                      <button onClick={() => setEditAnimal(animal)} className="text-gray-400 hover:text-blue-500 transition" title="Editar">
                         ✏️
                       </button>
-
                       {animal.estado !== 'adoptado' && (
-                        <button onClick={() => handleMarkAdopted(animal)}
-                          className="text-green-400 hover:text-green-600 p-1.5 rounded-full hover:bg-green-50 transition"
-                          aria-label={`Marcar adoptado ${animal.nombre}`}>
+                        <button onClick={() => handleMarkAdopted(animal)} className="text-gray-400 hover:text-green-500 transition" title="Adoptado">
                           🏠
                         </button>
                       )}
-
-                      <button
-                        onClick={() => handleDelete(animal.id)}
-                        className="text-red-400 hover:text-red-600 p-1.5 rounded-full hover:bg-red-50 transition"
-                        aria-label={`Archivar ${animal.nombre}`}>
+                      <button onClick={() => handleDelete(animal.id)} className="text-gray-400 hover:text-red-500 transition" title="Archivar">
                         🗑️
                       </button>
                     </div>
@@ -180,32 +168,18 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
           </div>
 
           {/* PAGINACIÓN */}
-           {total > 8 && (
-            <div className="flex justify-center items-center gap-3 mt-8 pb-4 border-t border-gray-200 pt-6">
-              <button
-                onClick={() => {
-                  setPage(page - 1);
-                  window.scrollTo({ top: 0, behavior: 'smooth' }); // Sube la pantalla suavemente
-                }}
-                disabled={page === 1}
-                className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold text-sm hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
-              >
-                ← Anterior
+          {total > 8 && (
+            <div className="flex justify-center items-center gap-3 mt-8 pt-6 border-t border-gray-100">
+              <button disabled={page === 1} onClick={() => handlePageChange(page - 1)}
+                className="px-3 py-1.5 rounded-lg border bg-white text-xs font-bold disabled:opacity-30">
+                Anterior
               </button>
-
-              <span className="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 rounded-xl">
-                Página {page} de {Math.ceil(total / 8)}
+              <span className="text-xs font-bold text-gray-500">
+                {page} / {Math.ceil(total / 8)}
               </span>
-
-              <button
-                onClick={() => {
-                  setPage(page + 1);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                disabled={page === Math.ceil(total / 8)}
-                className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold text-sm hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
-              >
-                Siguiente →
+              <button disabled={page === Math.ceil(total / 8)} onClick={() => handlePageChange(page + 1)}
+                className="px-3 py-1.5 rounded-lg border bg-white text-xs font-bold disabled:opacity-30">
+                Siguiente
               </button>
             </div>
           )}
