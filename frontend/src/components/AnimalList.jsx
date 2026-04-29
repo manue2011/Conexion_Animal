@@ -180,15 +180,31 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
           </div>
 
           {/* PAGINACIÓN */}
-          {Math.ceil(total / 8) > 1 && (
-            <div className="flex justify-center gap-2 mt-4">
-              <button disabled={page === 1} onClick={() => setPage(p => p - 1)}
-                className="px-4 py-2 rounded-lg bg-white border text-sm disabled:opacity-40 hover:bg-gray-50">
+           {total > 8 && (
+            <div className="flex justify-center items-center gap-3 mt-8 pb-4 border-t border-gray-200 pt-6">
+              <button
+                onClick={() => {
+                  setPage(page - 1);
+                  window.scrollTo({ top: 0, behavior: 'smooth' }); // Sube la pantalla suavemente
+                }}
+                disabled={page === 1}
+                className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold text-sm hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+              >
                 ← Anterior
               </button>
-              <span className="px-4 py-2 text-sm text-gray-500">{page} / {Math.ceil(total / 8)}</span>
-              <button disabled={page === Math.ceil(total / 8)} onClick={() => setPage(p => p + 1)}
-                className="px-4 py-2 rounded-lg bg-white border text-sm disabled:opacity-40 hover:bg-gray-50">
+
+              <span className="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 rounded-xl">
+                Página {page} de {Math.ceil(total / 8)}
+              </span>
+
+              <button
+                onClick={() => {
+                  setPage(page + 1);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                disabled={page === Math.ceil(total / 8)}
+                className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-gray-600 font-bold text-sm hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+              >
                 Siguiente →
               </button>
             </div>
