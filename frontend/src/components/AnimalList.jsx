@@ -150,26 +150,32 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
                     {animal.edad ? `${animal.edad} años` : 'Edad desconocida'}
                   </p>
 
-                  {/* 🛠️ BOTONES DE ACCIÓN - MÁS GRANDES (Alineados abajo con border-t) */}
+             
                   <div className="flex items-center justify-between pt-4 mt-auto border-t border-gray-100">
-                    <button onClick={() => setEditAnimal(animal)} 
-                      className="text-gray-400 hover:text-blue-500 bg-gray-50 hover:bg-blue-50 p-2.5 rounded-lg transition-colors" 
-                      title={`Editar a ${animal.nombre}`}>
-                      <span className="text-base">✏️</span>
+                    <button 
+                      onClick={() => setEditAnimal(animal)} 
+                      className="text-gray-400 hover:text-blue-500 bg-gray-50 hover:bg-blue-100 p-3 rounded-xl transition-all active:scale-90" 
+                      title={`Editar a ${animal.nombre}`}
+                    >
+                      <span className="text-xl md:text-2xl">✏️</span>
                     </button>
 
                     {animal.estado !== 'adoptado' && (
-                      <button onClick={() => handleMarkAdopted(animal)} 
-                        className="text-gray-400 hover:text-green-500 bg-gray-50 hover:bg-green-50 p-2.5 rounded-lg transition-colors" 
-                        title={`Marcar adoptado a ${animal.nombre}`}>
-                        <span className="text-base">🏠</span>
+                      <button 
+                        onClick={() => handleMarkAdopted(animal)} 
+                        className="text-gray-400 hover:text-green-500 bg-gray-50 hover:bg-green-100 p-3 rounded-xl transition-all active:scale-90" 
+                        title={`Marcar adoptado a ${animal.nombre}`}
+                      >
+                        <span className="text-xl md:text-2xl">🏠</span>
                       </button>
                     )}
 
-                    <button onClick={() => handleDelete(animal.id)} 
-                      className="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 p-2.5 rounded-lg transition-colors" 
-                      title={`Archivar a ${animal.nombre}`}>
-                      <span className="text-base">🗑️</span>
+                    <button 
+                      onClick={() => handleDelete(animal.id)} 
+                      className="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-100 p-3 rounded-xl transition-all active:scale-90" 
+                      title={`Archivar a ${animal.nombre}`}
+                    >
+                      <span className="text-xl md:text-2xl">🗑️</span>
                     </button>
                   </div>
                 </div>
