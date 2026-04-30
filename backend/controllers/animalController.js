@@ -150,19 +150,22 @@ const deleteAnimal = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: "Error al eliminar" });
   }
-};const getPublicAnimals = async (req, res) => {
+};
+// 1. FIX: QUE NO SALGAN LOS DE LA COLONIA
+const getPublicAnimals = async (req, res) => {
   const { especie, urgent, ubicacion, page = 1, limit = 8 } = req.query;
 
   try {
+    // AÑADIDO: AND a.protectora_id IS NOT NULL para excluir colonias
     let baseQuery = `
       SELECT a.*, p.direccion as protectora_direccion 
       FROM animales a
-      LEFT JOIN protectoras p ON a.protectora_id = p.id
-      WHERE a.estado = 'activo'
+      JOIN protectoras p ON a.protectora_id = p.id
+      WHERE a.estado = 'activo' AND a.protectora_id IS NOT NULL
     `;
     let countQuery = `
       SELECT COUNT(*) FROM animales a
-      WHERE a.estado = 'activo'
+      WHERE a.estado = 'activo' AND a.protectora_id IS NOT NULL
     `;
     let params = [];
     let count = 1;
@@ -208,6 +211,18 @@ const deleteAnimal = async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ message: 'Error al filtrar' });
+  }
+};
+
+const getAdoptadosPublic = async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, nombre, foto_url FROM animales WHERE estado = 'adoptado' ORDER BY created_at DESC"
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Error en el servidor al obtener adoptados públicos');
   }
 };
 const getAnimalById = async (req, res) => {
@@ -295,6 +310,7 @@ module.exports = {
   deleteAnimal, 
   getPublicAnimals,
   getAnimalById,
-  getAdoptados
+  getAdoptados,
+  getAdoptadosPublic
 };
 
