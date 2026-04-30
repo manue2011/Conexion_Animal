@@ -228,16 +228,63 @@ const getAnimalById = async (req, res) => {
   }
   
 };
+// 5. OBTENER ADOPTADOS CON FILTROS Y PAGINACIÓN (PARA EL ADMIN)
 const getAdoptados = async (req, res) => {
   try {
-    const result = await pool.query(
-     
-      "SELECT id, nombre, foto_url FROM animales WHERE estado = 'adoptado' ORDER BY created_at DESC"
-    );
-    res.json(result.rows);
+    const { id: userId, role: userRole } = req.user;
+    const { especie, order, page = 1, limit = 8 } = req.query;
+
+    let baseQuery = "";
+    let countQuery = "";
+    let params = [];
+    let count = 1;
+
+    // Misma lógica de permisos que getAnimals pero buscando 'adoptado'
+    if (userRole === 'superadmin') {
+      baseQuery = "SELECT * FROM animales WHERE estado = 'adoptado'";
+      countQuery = "SELECT COUNT(*) FROM animales WHERE estado = 'adoptado'";
+    } else if (userRole === 'admin') {
+      baseQuery = `SELECT a.* FROM animales a JOIN protectora_admins pa ON a.protectora_id = pa.protectora_id WHERE pa.user_id = $1 AND a.estado = 'adoptado'`;
+      countQuery = `SELECT COUNT(*) FROM animales a JOIN protectora_admins pa ON a.protectora_id = pa.protectora_id WHERE pa.user_id = $1 AND a.estado = 'adoptado'`;
+      params.push(userId);
+      count++;
+    } else {
+      baseQuery = `SELECT a.* FROM animales a JOIN colonias c ON a.colonia_id = c.id WHERE c.gestor_id = $1 AND a.estado = 'adoptado'`;
+      countQuery = `SELECT COUNT(*) FROM animales a JOIN colonias c ON a.colonia_id = c.id WHERE c.gestor_id = $1 AND a.estado = 'adoptado'`;
+      params.push(userId);
+      count++;
+    }
+
+    // Filtro de especie si existe
+    if (especie && especie.trim() !== '') {
+      baseQuery += ` AND a.especie ILIKE $${count}`;
+      countQuery += ` AND a.especie ILIKE $${count}`;
+      params.push(especie);
+      count++;
+    }
+
+    // Ejecutar conteo para paginación
+    const totalResult = await pool.query(countQuery, params);
+    const total = parseInt(totalResult.rows[0].count);
+
+    // Orden y Paginación final
+    const orden = order === 'asc' ? 'ASC' : 'DESC';
+    baseQuery += ` ORDER BY a.created_at ${orden}`;
+    
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    baseQuery += ` LIMIT $${count} OFFSET $${count + 1}`;
+    params.push(parseInt(limit), offset);
+
+    const result = await pool.query(baseQuery, params);
+
+    res.json({
+      animales: result.rows,
+      total: total
+    });
+
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Error en el servidor al obtener adoptados');
+    console.error("Error al obtener adoptados:", err.message);
+    res.status(500).json({ message: "Error al obtener historial de adoptados" });
   }
 };
 
