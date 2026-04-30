@@ -16,7 +16,7 @@ const multer = require("multer");
 const upload = multer({ dest: "uploads/" });
 
 
-router.get("/adoptados", getAdoptadosPublic); l
+router.get("/adoptados", getAdoptadosPublic); 
 router.get("/public", getPublicAnimals);
 router.get("/public/:id", getAnimalById);
 
