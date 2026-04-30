@@ -234,7 +234,7 @@ const AdminDashboard = () => {
                   <button onClick={() => setIsProfileModalOpen(true)} className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">Completar Perfil</button>
                 </div>
               ) : (
-               <AnimalForm animalAEditar={animalAEditar} onSuccess={() => { triggerRefresh();  setActiveView('animales'); setAnimalAEditar(null);  }} onCancel={() => {
+               <AnimalForm animalAEditar={animalAEditar} readOnly={animalAEditar?.estado === 'adoptado'} onSuccess={() => { triggerRefresh();  setActiveView('animales'); setAnimalAEditar(null);  }} onCancel={() => {
               setActiveView('animales'); 
               setAnimalAEditar(null);    
         }} />
