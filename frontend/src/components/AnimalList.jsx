@@ -13,14 +13,13 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
 
   const [view, setView] = useState('activos');
 
-  const fetchAnimales = async () => {
+const fetchAnimales = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
       const params = new URLSearchParams({ page, limit: 8, order: filtroFecha });
       if (filtroEspecie) params.append('especie', filtroEspecie);
       
-      // 2. USAMOS EL VIEW PARA ELEGIR EL ENDPOINT CORRECTO
       const endpoint = view === 'activos' ? '/api/animales' : '/api/animales/adoptados/lista';
       
       const response = await axios.get(`${API_URL}${endpoint}?${params}`, {

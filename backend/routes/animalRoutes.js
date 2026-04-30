@@ -18,7 +18,7 @@ const upload = multer({ dest: "uploads/" });
 router.get("/adoptados", getAdoptados);
 router.get("/public", getPublicAnimals);
 router.get("/public/:id", getAnimalById);
-
+router.get("/adoptados/lista", verifyToken, getAdoptados);
 // --- 2. RUTAS PRIVADAS (Con token) ---
 // GET para obtener animales de una protectora
 router.get("/", verifyToken, getAnimals); 
