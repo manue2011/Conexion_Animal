@@ -3,7 +3,8 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
+// 1. CORREGIDA LA CABECERA: quitado el duplicado y añadido readOnly
+const AnimalForm = ({ animalAEditar, onSuccess, onCancel, readOnly }) => {
   let user = {};
   try {
     user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -18,7 +19,6 @@ const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   
-  // ESTADO PARA LA VISTA PREVIA DE LA IMAGEN
   const [previewUrl, setPreviewUrl] = useState(null);
 
   useEffect(() => {
@@ -40,12 +40,11 @@ const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
     }
   }, [animalAEditar]);
 
-  // EFECTO PARA GENERAR LA URL LOCAL CUANDO SE SUBE UNA FOTO
   useEffect(() => {
     if (file) {
       const objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
-      return () => URL.revokeObjectURL(objectUrl); // Limpiar memoria
+      return () => URL.revokeObjectURL(objectUrl);
     } else if (!animalAEditar?.foto_url) {
       setPreviewUrl(null);
     }
@@ -60,11 +59,14 @@ const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Si es readOnly, evitamos que se envíe por si acaso
+    if (readOnly) return; 
+
     setLoading(true);
     setMessage(null);
     try {
       const token = localStorage.getItem('token');
-        if (animalAEditar) {
+      if (animalAEditar) {
         const payload = {
           ...formData,
           estado: animalAEditar.estado || 'activo'
@@ -98,14 +100,21 @@ const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
   };
 
   return (
-    // ESTRUCTURA A DOS COLUMNAS
     <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
       
       {/* --- COLUMNA IZQUIERDA: EL FORMULARIO --- */}
-      <div className="bg-white p-4 md:p-6 rounded-xl shadow-md flex-1 w-full">
-        <div className="flex justify-between items-center mb-4">
+      <div className="bg-white p-4 md:p-6 rounded-xl shadow-md flex-1 w-full relative">
+        
+        {/* Cartelito de modo lectura */}
+        {readOnly && (
+          <div className="absolute top-0 left-0 w-full bg-blue-100 text-blue-800 text-xs font-bold text-center py-1 rounded-t-xl">
+            MODO CONSULTA: ESTE ANIMAL YA ESTÁ ADOPTADO
+          </div>
+        )}
+
+        <div className={`flex justify-between items-center mb-4 ${readOnly ? 'mt-4' : ''}`}>
           <h3 className="text-base md:text-xl font-bold text-gray-700">
-            {animalAEditar ? '✏️ Editar Animal' : 'Registrar Nuevo Animal'}
+            {readOnly ? '📄 Ficha del Animal' : (animalAEditar ? '✏️ Editar Animal' : 'Registrar Nuevo Animal')}
           </h3>
           {animalAEditar && (
             <button 
@@ -113,7 +122,7 @@ const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
               onClick={onCancel}
               className="text-gray-400 hover:text-gray-600 font-bold text-sm bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-lg transition"
             >
-              ✕ Cancelar
+              ✕ Cerrar
             </button>
           )}
         </div>
@@ -133,7 +142,8 @@ const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
                 placeholder="Nombre del animal"
                 value={formData.nombre}
                 onChange={handleChange}
-                className="border border-gray-300 p-2.5 rounded-lg w-full text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={readOnly}
+                className="border border-gray-300 p-2.5 rounded-lg w-full text-sm outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
                 required
               />
             </div>
@@ -143,7 +153,8 @@ const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
                 name="especie"
                 value={formData.especie}
                 onChange={handleChange}
-                className="border border-gray-300 p-2.5 rounded-lg w-full text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={readOnly} // 2. AÑADIDO DISABLED AQUÍ
+                className="border border-gray-300 p-2.5 rounded-lg w-full text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
                 required
               >
                 <option value="" disabled>-- Selecciona --</option>
@@ -166,14 +177,16 @@ const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
                 placeholder="Ej: 3"
                 value={formData.edad}
                 onChange={handleChange}
-                className="border border-gray-300 p-2.5 rounded-lg w-full text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={readOnly}
+                className="border border-gray-300 p-2.5 rounded-lg w-full text-sm outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
               />
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Prioridad</label>
-              <label className="flex items-center gap-2 border border-gray-300 p-2.5 rounded-lg bg-gray-50 cursor-pointer h-[42px]">
+              <label className={`flex items-center gap-2 border border-gray-300 p-2.5 rounded-lg h-[42px] ${readOnly ? 'bg-gray-100 cursor-not-allowed opacity-70' : 'bg-gray-50 cursor-pointer'}`}>
                 <input
                   type="checkbox"
+                  disabled={readOnly}
                   name="urgent"
                   checked={formData.urgent}
                   onChange={handleChange}
@@ -191,7 +204,8 @@ const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
               placeholder="Historia, comportamiento..."
               value={formData.descripcion}
               onChange={handleChange}
-              className="border border-gray-300 p-2.5 rounded-lg w-full h-24 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              disabled={readOnly} // 2. AÑADIDO DISABLED AQUÍ
+              className="border border-gray-300 p-2.5 rounded-lg w-full h-24 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:bg-gray-50 disabled:text-gray-500"
             />
           </div>
 
@@ -201,49 +215,63 @@ const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
               <input
                 type="text"
                 name="ubicacion"
+                disabled={readOnly}
                 placeholder="Ciudad o Provincia"
                 value={formData.ubicacion}
                 onChange={handleChange}
-                className="border border-gray-300 p-2.5 rounded-lg w-full text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                className="border border-gray-300 p-2.5 rounded-lg w-full text-sm outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
                 required={user?.role === 'admin'}
               />
             </div>
           )}
 
-          {!animalAEditar ? (
-            <div className="border-2 border-dashed border-gray-300 p-3 md:p-4 rounded-lg text-center">
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Foto</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="block w-full text-xs md:text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-              />
-            </div>
-          ) : (
-            <div className="bg-yellow-50 p-3 rounded-lg text-yellow-700 text-xs text-center border border-yellow-200">
-              ℹ️ La foto no se puede modificar desde el modo edición actualmente.
-            </div>
+          {/* Ocultamos totalmente la subida de fotos si estamos solo leyendo */}
+          {!readOnly && (
+            !animalAEditar ? (
+              <div className="border-2 border-dashed border-gray-300 p-3 md:p-4 rounded-lg text-center">
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Foto</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="block w-full text-xs md:text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                />
+              </div>
+            ) : (
+              <div className="bg-yellow-50 p-3 rounded-lg text-yellow-700 text-xs text-center border border-yellow-200">
+                ℹ️ La foto no se puede modificar desde el modo edición actualmente.
+              </div>
+            )
           )}
 
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-3 px-4 rounded-lg text-white font-bold text-sm transition-all active:scale-95 ${loading ? 'bg-gray-400 cursor-not-allowed' : (animalAEditar ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700')}`}
-            >
-              {loading ? 'Procesando...' : (animalAEditar ? 'Guardar Cambios' : 'Guardar Animal')}
-            </button>
+          {/* 3. LÓGICA DE BOTONES AL FINAL */}
+          <div className="flex gap-3 pt-2">
+            {readOnly ? (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="w-full py-3 px-4 rounded-lg bg-gray-600 hover:bg-gray-700 text-white font-bold text-sm transition-all active:scale-95"
+              >
+                Cerrar Ficha
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full py-3 px-4 rounded-lg text-white font-bold text-sm transition-all active:scale-95 ${loading ? 'bg-gray-400 cursor-not-allowed' : (animalAEditar ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700')}`}
+              >
+                {loading ? 'Procesando...' : (animalAEditar ? 'Guardar Cambios' : 'Guardar Animal')}
+              </button>
+            )}
           </div>
         </form>
       </div>
 
-      {/* --- COLUMNA DERECHA: VISTA PREVIA (Oculta en móvil, visible en PC) --- */}
+      {/* --- COLUMNA DERECHA: VISTA PREVIA --- */}
       <div className="hidden lg:block w-80 shrink-0 sticky top-6">
         <h4 className="text-gray-500 font-bold mb-3 uppercase text-sm tracking-wider">Vista Previa</h4>
         <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-lg">
           
-          {/* Contenedor Foto Previa */}
           <div className="h-56 bg-gray-100 flex items-center justify-center relative">
             {previewUrl ? (
               <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
@@ -254,7 +282,6 @@ const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
               </div>
             )}
             
-            {/* Etiqueta flotante de urgencia sobre la foto */}
             {formData.urgent && (
               <span className="absolute top-3 right-3 bg-red-600 text-white text-[10px] px-3 py-1 rounded-full font-bold shadow-md animate-pulse">
                 URGENTE
@@ -262,7 +289,6 @@ const AnimalForm = ({ onSuccess, onCancel, animalAEditar }) => {
             )}
           </div>
 
-          {/* Contenedor Datos Previos */}
           <div className="p-5">
             <h3 className="font-extrabold text-xl text-gray-800 truncate mb-2">
               {formData.nombre || 'Nombre del animal'}
