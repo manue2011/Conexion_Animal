@@ -10,6 +10,10 @@ const ColoniaDashboard = () => {
   const [error, setError] = useState('');
   const [activeView, setActiveView] = useState('animales');
   const [coloniaInfo, setColoniaInfo] = useState(null);
+  
+  // NUEVO: Estado para el filtro de fecha
+  const [filtroFecha, setFiltroFecha] = useState('desc');
+
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [perfilForm, setPerfilForm] = useState({ descripcion: '', direccion: '', codigo_postal: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,47 +26,55 @@ const ColoniaDashboard = () => {
   const [needForm, setNeedForm] = useState({ titulo: '', categoria: 'comida', descripcion: '', prioridad: 'normal' });
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleSubmitNeed = async (e) => {
-    e.preventDefault();
-    if (isSubmittingNeed) return;
-    setIsSubmittingNeed(true);
+  // Cargar datos de la colonia (solo una vez)
+  const fetchColoniaInfo = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`${API_URL}/api/necesidades`, { ...needForm, colonia_id: coloniaInfo.id }, {
+      const resColonia = await axios.get(`${API_URL}/api/usuarios/mi-colonia`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      alert(needForm.prioridad === 'urgente' ? '¡Alerta enviada a los voluntarios!' : 'Petición publicada correctamente.');
-      setIsNeedModalOpen(false);
-      setNeedForm({ titulo: '', categoria: 'comida', descripcion: '', prioridad: 'normal' });
-    } catch (err) {
-      alert(err.response?.data?.message || 'Error al publicar la petición.');
-    } finally {
-      setIsSubmittingNeed(false);
-    }
-  };
-
-  const fetchData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const resColonia = await axios.get(`${API_URL}/api/usuarios/mi-colonia`, config);
       setColoniaInfo(resColonia.data);
       setPerfilForm({
         descripcion: resColonia.data.descripcion || '',
         direccion: resColonia.data.direccion || '',
         codigo_postal: resColonia.data.codigo_postal || ''
       });
-      const resAnimales = await axios.get(`${API_URL}/api/animales`, config);
-      setAnimales(resAnimales.data);
     } catch (err) {
-      console.error('ERROR DETALLADO:', err.response?.data || err.message);
-      setError(err.response?.data?.message || 'Error al cargar los datos');
+      console.error('Error cargando colonia:', err);
+    }
+  };
+
+  // Cargar animales (Se ejecuta al inicio y cuando cambia el filtro de fecha)
+  const fetchAnimales = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const token = localStorage.getItem('token');
+      // Pasamos el orden y ponemos un límite alto para ver todos los gatos
+      const params = new URLSearchParams({ order: filtroFecha, limit: 100 }); 
+      
+      const resAnimales = await axios.get(`${API_URL}/api/animales?${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // SOLUCIÓN AL PANTALLAZO BLANCO (e.map is not a function)
+      const data = resAnimales.data.animales || [];
+      setAnimales(data);
+      
+    } catch (err) {
+      setError('Error al cargar los animales');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchColoniaInfo();
+  }, []);
+
+  useEffect(() => {
+    fetchAnimales();
+  }, [filtroFecha]); // Se recarga automáticamente al cambiar el filtro
 
   const handleUpdatePerfil = async (e) => {
     e.preventDefault();
@@ -72,7 +84,7 @@ const ColoniaDashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIsProfileModalOpen(false);
-      fetchData();
+      fetchColoniaInfo();
       alert('¡Perfil de colonia actualizado!');
     } catch (err) {
       alert('Error al actualizar el perfil.');
@@ -95,16 +107,18 @@ const ColoniaDashboard = () => {
       const token = localStorage.getItem('token');
       const data = new FormData();
       data.append('nombre', formData.nombre);
-      data.append('especie', formData.especie);
+      data.append('especie', formData.especie); // Siempre será 'Gato'
       data.append('edad', formData.edad);
       data.append('urgent', formData.urgent);
       data.append('descripcion', formData.descripcion);
       data.append('colonia_id', coloniaInfo.id);
       if (file) data.append('foto_url', file);
+      
       await axios.post(`${API_URL}/api/animales`, data, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
-      await fetchData();
+      
+      await fetchAnimales(); // Recargamos la lista
       setIsModalOpen(false);
       setFormData({ nombre: '', especie: 'Gato', edad: '', urgent: false, descripcion: '' });
       setFile(null);
@@ -120,9 +134,28 @@ const ColoniaDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(`${API_URL}/api/animales/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      setAnimales(animales.filter(a => a.id !== id));
+      fetchAnimales(); // Recargamos para asegurar el orden
     } catch (err) {
       alert('No se pudo eliminar el animal.');
+    }
+  };
+
+  const handleSubmitNeed = async (e) => {
+    e.preventDefault();
+    if (isSubmittingNeed) return;
+    setIsSubmittingNeed(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_URL}/api/necesidades`, { ...needForm, colonia_id: coloniaInfo.id }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert(needForm.prioridad === 'urgente' ? '¡Alerta enviada a los voluntarios!' : 'Petición publicada correctamente.');
+      setIsNeedModalOpen(false);
+      setNeedForm({ titulo: '', categoria: 'comida', descripcion: '', prioridad: 'normal' });
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error al publicar la petición.');
+    } finally {
+      setIsSubmittingNeed(false);
     }
   };
 
@@ -199,44 +232,59 @@ const ColoniaDashboard = () => {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Censo de Animales</h1>
-                <p className="text-gray-600">Gestiona los habitantes de tu zona</p>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Censo de la Colonia</h1>
+                <p className="text-gray-600">Gestiona los gatos de tu zona</p>
               </div>
-              <button
-                disabled={!coloniaInfo?.direccion}
-                onClick={() => setIsModalOpen(true)}
-                className={`font-bold py-2 px-6 rounded-lg shadow-lg transition self-start sm:self-auto ${!coloniaInfo?.direccion ? 'bg-gray-400 cursor-not-allowed text-gray-200' : 'bg-green-600 hover:bg-green-700 text-white'}`}
-              >+ Añadir Nuevo Animal</button>
+              
+              {/* FILTRO DE FECHA Y BOTÓN AÑADIR */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <select 
+                  value={filtroFecha} 
+                  onChange={e => setFiltroFecha(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white shadow-sm outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-700"
+                >
+                  <option value="desc">⏱️ Más recientes</option>
+                  <option value="asc">⏳ Más antiguos</option>
+                </select>
+
+                <button
+                  disabled={!coloniaInfo?.direccion}
+                  onClick={() => setIsModalOpen(true)}
+                  className={`font-bold py-2 px-6 rounded-lg shadow-lg transition ${!coloniaInfo?.direccion ? 'bg-gray-400 cursor-not-allowed text-gray-200' : 'bg-green-600 hover:bg-green-700 text-white'}`}
+                >+ Añadir Gato</button>
+              </div>
             </div>
 
             {error && <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6">{error}</div>}
 
             {loading ? (
-              <p className="text-center text-gray-500">Cargando censo...</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(3)].map((_, i) => <div key={i} className="animate-pulse bg-gray-200 rounded-xl h-64 w-full" />)}
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {animales.length === 0 ? (
                   <div className="col-span-full text-center py-20 text-gray-400">
                     <p className="text-5xl mb-4">🐱</p>
-                    <p>No hay animales registrados en esta colonia.</p>
+                    <p className="font-medium">No hay gatos registrados en esta colonia.</p>
                   </div>
                 ) : (
                   animales.map(animal => (
                     <div key={animal.id} className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition relative group">
                       {animal.urgent && (
-                        <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-full z-10 shadow-sm">URGENTE</span>
+                        <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-full z-10 shadow-sm animate-pulse">URGENTE</span>
                       )}
                       <button
                         onClick={() => handleDelete(animal.id)}
+                        title="Archivar gato"
                         className="absolute top-2 right-2 bg-white/90 hover:bg-red-50 text-red-500 p-2 rounded-full z-10 shadow-sm transition-all opacity-0 group-hover:opacity-100"
                       >🗑️</button>
                       <img className="h-48 w-full object-cover" src={animal.foto_url || 'https://via.placeholder.com/400x300?text=Sin+Foto'} alt={animal.nombre} />
                       <div className="p-5">
                         <div className="flex justify-between items-center mb-2">
                           <h3 className="text-xl font-bold text-gray-800 truncate">{animal.nombre}</h3>
-                          <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-600">{animal.especie}</span>
                         </div>
                         <p className="text-gray-500 text-xs mb-3 italic">{animal.edad ? `${animal.edad} años` : 'Edad no especificada'}</p>
                         <p className="text-gray-600 text-sm line-clamp-2">{animal.descripcion}</p>
@@ -250,6 +298,7 @@ const ColoniaDashboard = () => {
         )}
       </main>
 
+      {/* --- MODALES OMITIDOS PARA BREVEDAD (SON EXACTAMENTE LOS MISMOS QUE TENÍAS) --- */}
       {/* MODAL: PERFIL */}
       {isProfileModalOpen && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[60] backdrop-blur-sm">
@@ -283,7 +332,7 @@ const ColoniaDashboard = () => {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-xl relative max-h-[90vh] overflow-y-auto">
             <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Nuevo Registro</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Nuevo Gato</h2>
             {formError && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm font-medium border border-red-100">{formError}</div>}
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -308,11 +357,11 @@ const ColoniaDashboard = () => {
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Descripción</label>
-                <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg h-24 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Detalles..."></textarea>
+                <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} className="w-full border border-gray-300 p-2.5 rounded-lg h-24 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Detalles de este gatito..."></textarea>
               </div>
               <div className="md:col-span-2 mt-4">
                 <button type="submit" disabled={isSubmitting} className={`w-full text-white font-bold py-3 px-4 rounded-xl transition shadow-lg ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
-                  {isSubmitting ? 'Guardando...' : 'Guardar Animal'}
+                  {isSubmitting ? 'Guardando...' : 'Guardar Gato'}
                 </button>
               </div>
             </form>
