@@ -10,10 +10,9 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
   const [page, setPage] = useState(1);
   const [filtroEspecie, setFiltroEspecie] = useState('');
   const [filtroFecha, setFiltroFecha] = useState('desc');
-
   const [view, setView] = useState('activos');
 
-const fetchAnimales = async () => {
+  const fetchAnimales = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -36,7 +35,6 @@ const fetchAnimales = async () => {
     }
   };
 
-  // 3. AÑADIMOS 'view' A LOS ARRAYS DE DEPENDENCIAS
   useEffect(() => { fetchAnimales(); }, [refreshTrigger, page, filtroEspecie, filtroFecha, view]);
   useEffect(() => { setPage(1); }, [filtroEspecie, filtroFecha, view]);
 
@@ -86,7 +84,7 @@ const fetchAnimales = async () => {
   return (
     <div className="flex flex-col w-full">
       
-      {/* 4. LAS PESTAÑAS (TABS) */}
+      {/* PESTAÑAS (TABS) */}
       <div className="flex gap-2 mb-6 bg-gray-200/50 p-1.5 rounded-2xl w-fit shadow-inner">
         <button 
           onClick={() => setView('activos')}
@@ -131,11 +129,6 @@ const fetchAnimales = async () => {
             {animales.map((animal) => (
               <div key={animal.id} className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex flex-col shadow-sm hover:shadow-xl transition-all duration-300 group min-w-0 relative">
                 
-                {/* Overlay de ADOPTADO si estamos en esa vista */}
-                {view === 'adoptados' && (
-                  <div className="absolute inset-0 bg-green-500/10 pointer-events-none z-10" />
-                )}
-
                 <div className="h-40 w-full bg-gray-100 relative overflow-hidden shrink-0">
                   <img
                     src={animal.foto_url}
@@ -161,30 +154,46 @@ const fetchAnimales = async () => {
                     {animal.edad ? `${animal.edad} años` : 'Edad desconocida'}
                   </p>
 
+                  {/* SECCIÓN DE BOTONES CORREGIDA */}
                   <div className="flex items-center justify-between pt-4 mt-auto border-t border-gray-100">
-                    <button 
-                      onClick={() => setEditAnimal(animal)} 
-                      className="text-gray-400 hover:text-blue-500 bg-gray-50 hover:bg-blue-100 p-3 rounded-xl transition-all" 
-                    >
-                      <span className="text-xl md:text-2xl">✏️</span>
-                    </button>
+                    {view === 'activos' ? (
+                      // BOTONES PARA ANIMALES ACTIVOS
+                      <>
+                        <button 
+                          onClick={() => setEditAnimal(animal)} 
+                          className="text-gray-400 hover:text-blue-500 bg-gray-50 hover:bg-blue-100 p-3 rounded-xl transition-all active:scale-90" 
+                          title="Editar"
+                        >
+                          <span className="text-xl md:text-2xl">✏️</span>
+                        </button>
 
-                    {/* Solo mostramos el botón de hogar si están activos */}
-                    {view === 'activos' && (
+                        <button 
+                          onClick={() => handleMarkAdopted(animal)} 
+                          className="text-gray-400 hover:text-green-500 bg-gray-50 hover:bg-green-100 p-3 rounded-xl transition-all active:scale-90" 
+                          title="Adoptado"
+                        >
+                          <span className="text-xl md:text-2xl">🏠</span>
+                        </button>
+
+                        <button 
+                          onClick={() => handleDelete(animal.id)} 
+                          className="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-100 p-3 rounded-xl transition-all active:scale-90" 
+                          title="Borrar"
+                        >
+                          <span className="text-xl md:text-2xl">🗑️</span>
+                        </button>
+                      </>
+                    ) : (
+                      // BOTÓN ÚNICO PARA ANIMALES ADOPTADOS (SOLO VER)
                       <button 
-                        onClick={() => handleMarkAdopted(animal)} 
-                        className="text-gray-400 hover:text-green-500 bg-gray-50 hover:bg-green-100 p-3 rounded-xl transition-all" 
+                        onClick={() => setEditAnimal(animal)} 
+                        className="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-3 rounded-xl transition-all flex items-center gap-2 w-full justify-center active:scale-95" 
+                        title="Ver Ficha"
                       >
-                        <span className="text-xl md:text-2xl">🏠</span>
+                        <span className="text-2xl">👁️</span>
+                        <span className="font-bold text-xs uppercase">Ver Ficha</span>
                       </button>
                     )}
-
-                    <button 
-                      onClick={() => handleDelete(animal.id)} 
-                      className="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-100 p-3 rounded-xl transition-all" 
-                    >
-                      <span className="text-xl md:text-2xl">🗑️</span>
-                    </button>
                   </div>
                 </div>
               </div>
@@ -194,9 +203,9 @@ const fetchAnimales = async () => {
           {/* PAGINACIÓN */}
           {total > 8 && (
             <div className="flex justify-center items-center gap-3 mt-10 pb-4 pt-6 border-t border-gray-200">
-              <button disabled={page === 1} onClick={() => handlePageChange(page - 1)} className="px-4 py-2 rounded-xl border bg-white text-gray-600 font-bold text-sm disabled:opacity-30">← Anterior</button>
+              <button disabled={page === 1} onClick={() => handlePageChange(page - 1)} className="px-4 py-2 rounded-xl border bg-white text-gray-600 font-bold text-sm disabled:opacity-30 shadow-sm">← Anterior</button>
               <span className="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 rounded-xl">Página {page} de {Math.ceil(total / 8)}</span>
-              <button disabled={page === Math.ceil(total / 8)} onClick={() => handlePageChange(page + 1)} className="px-4 py-2 rounded-xl border bg-white text-gray-600 font-bold text-sm disabled:opacity-30">Siguiente →</button>
+              <button disabled={page === Math.ceil(total / 8)} onClick={() => handlePageChange(page + 1)} className="px-4 py-2 rounded-xl border bg-white text-gray-600 font-bold text-sm disabled:opacity-30 shadow-sm">Siguiente →</button>
             </div>
           )}
         </>
