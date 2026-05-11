@@ -20,7 +20,7 @@ const PoliticaPrivacidad = () => {
 
         <section className="mb-6">
           <h2 className="text-lg md:text-xl font-semibold mb-2">3. Finalidad</h2>
-          <p className="text-sm md:text-base leading-relaxed">Usamos tus datos para gestionar tu cuenta de usuario, permitirte interactuar con el catálogo de animales y enviarte notificaciones importantes sobre tus solicitudes a través de <strong>SendGrid</strong>.</p>
+          <p className="text-sm md:text-base leading-relaxed">Usamos tus datos para gestionar tu cuenta de usuario, permitirte interactuar con el catálogo de animales y enviarte notificaciones importantes sobre tus solicitudes a través de <strong>API oficial de Gmail (Google)</strong>.</p>
         </section>
 
         <section className="mb-6">
@@ -28,7 +28,7 @@ const PoliticaPrivacidad = () => {
           <p className="text-sm md:text-base leading-relaxed">No vendemos tus datos. Sin embargo, utilizamos servicios externos necesarios para el funcionamiento:</p>
           <ul className="list-disc ml-5 mt-2 space-y-1 text-sm md:text-base">
             <li><strong>Google reCAPTCHA:</strong> Para proteger la web de bots.</li>
-            <li><strong>SendGrid:</strong> Para el envío de correos electrónicos.</li>
+            <li><strong>Gmail API (Google):</strong> Para el envío de correos electrónicos.</li>
           </ul>
         </section>
 
