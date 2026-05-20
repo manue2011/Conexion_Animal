@@ -1,6 +1,7 @@
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
+import { AuthProvider } from './context/AuthContext';
 import axios from 'axios'; 
 // Componentes
 import Navbar from './components/Navbar'; 
@@ -54,56 +55,58 @@ axios.interceptors.response.use(
 );
 
 function App() {
-  return (
+ return (
     <GoogleReCaptchaProvider reCaptchaKey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}>
-    <BrowserRouter>
-      <Navbar />
-      <main className="min-h-screen">
-      <Routes>
-  
-        <Route path="/" element={<HomePage />} />
-        <Route path="/animal/:id" element={<AnimalDetailsPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/tablon" element={<TablonPage />} />
-        <Route path="/privacidad" element={<PoliticaPrivacidad />} />
-        <Route path="/" element={<HomePage />} />
-        <Route path="/terminos" element={<TerminosCondiciones />} />
-        <Route path="/contacto" element={<ContactoPage />} />
-        <Route path="/sobre-nosotros" element={<SobreNosotros />} />
-        <Route path="/adoptados" element={<AdoptadosPage />} />
-        <Route path="/planes" element={<PlanesPage />} />
-   
-        <Route element={<ProtectedRoute allowedRoles={['user']} />}>
-          <Route path="/solicitar-rol" element={<SolicitarRolPage />} />
-          <Route path="/mis-solicitudes" element={<MisSolicitudesPage />} />
-        </Route>
+      <BrowserRouter>
+        
+        {/* AÑADE ESTA ETIQUETA AQUÍ */}
+        <AuthProvider>
+          
+          <Navbar />
+          <main className="min-h-screen">
+            <Routes>
+              {/* Aquí van todas tus rutas exactamente igual que las tienes */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/animal/:id" element={<AnimalDetailsPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/tablon" element={<TablonPage />} />
+              <Route path="/privacidad" element={<PoliticaPrivacidad />} />
+              <Route path="/terminos" element={<TerminosCondiciones />} />
+              <Route path="/contacto" element={<ContactoPage />} />
+              <Route path="/sobre-nosotros" element={<SobreNosotros />} />
+              <Route path="/adoptados" element={<AdoptadosPage />} />
+              <Route path="/planes" element={<PlanesPage />} />
+         
+              <Route element={<ProtectedRoute allowedRoles={['user']} />}>
+                <Route path="/solicitar-rol" element={<SolicitarRolPage />} />
+                <Route path="/mis-solicitudes" element={<MisSolicitudesPage />} />
+              </Route>
 
-      
-        <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        </Route>
+              <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              </Route>
 
-       
-        <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
-          <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
-       
-          <Route path="/superadmin/moderacion-tablon" element={<ModeracionTablonPage />} />
-        </Route>
+              <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
+                <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
+                <Route path="/superadmin/moderacion-tablon" element={<ModeracionTablonPage />} />
+              </Route>
 
-     
-        <Route element={<ProtectedRoute allowedRoles={['gestor']} />}>
-          <Route path="/colonia/dashboard" element={<ColoniaDashboard />} />
-        </Route>
-        <Route path="/colonias" element={<ColoniasPublic />} />
-      </Routes>
-      </main>
-      <Footer />
-      <CookieBanner />
-    </BrowserRouter>
-     </GoogleReCaptchaProvider>
+              <Route element={<ProtectedRoute allowedRoles={['gestor']} />}>
+                <Route path="/colonia/dashboard" element={<ColoniaDashboard />} />
+              </Route>
+              <Route path="/colonias" element={<ColoniasPublic />} />
+            </Routes>
+          </main>
+          <Footer />
+          <CookieBanner />
+
+        </AuthProvider>
+
+      </BrowserRouter>
+    </GoogleReCaptchaProvider>
   );
 }
 
