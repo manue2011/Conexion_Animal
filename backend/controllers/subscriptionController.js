@@ -121,7 +121,7 @@ const createCheckoutSession = async (req, res) => {
   }
 };
 
-// 3. NUEVA: Recibir el aviso de pago completado (Webhook)
+// 3. Recibir el aviso de pago completado (Webhook)
 const handleStripeWebhook = async (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
@@ -138,8 +138,31 @@ const handleStripeWebhook = async (req, res) => {
     const userId = session.client_reference_id;
 
     try {
-      await pool.query("UPDATE users SET plan = 'pro' WHERE id = $1", [userId]);
-      console.log(`✅ ¡ÉXITO! Usuario ${userId} actualizado a Plan Pro`);
+      // 1. Buscamos si el usuario que ha pagado pertenece a una protectora
+      const protectoraResult = await pool.query(
+        "SELECT protectora_id FROM protectora_admins WHERE user_id = $1 LIMIT 1",
+        [userId]
+      );
+
+      if (protectoraResult.rows.length > 0) {
+        const protectoraId = protectoraResult.rows[0].protectora_id;
+        
+        // 2. Si tiene protectora, actualizamos el plan a TODOS sus administradores
+        await pool.query(`
+          UPDATE users 
+          SET plan = 'pro' 
+          WHERE id IN (
+            SELECT user_id FROM protectora_admins WHERE protectora_id = $1
+          )
+        `, [protectoraId]);
+        
+        console.log(`✅ ¡ÉXITO! Toda la protectora ${protectoraId} actualizada a Plan Pro gracias al usuario ${userId}`);
+      } else {
+        // 3. Por si paga alguien que no tiene protectora asignada, para que no falle
+        await pool.query("UPDATE users SET plan = 'pro' WHERE id = $1", [userId]);
+        console.log(`✅ ¡ÉXITO! Usuario individual ${userId} actualizado a Plan Pro`);
+      }
+      
     } catch (dbErr) {
       console.error("Error al actualizar la base de datos en webhook:", dbErr);
     }
