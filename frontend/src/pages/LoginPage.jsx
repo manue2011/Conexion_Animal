@@ -1,13 +1,17 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react'; // 1. Añadimos useContext
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
+import { AuthContext } from '../context/AuthContext'; // 2. Importamos el contexto
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const { executeRecaptcha } = useGoogleReCaptcha();
+  
+  const { login } = useContext(AuthContext); 
+  
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -29,10 +33,10 @@ const LoginPage = () => {
         ...formData,
         recaptchaToken: captchaToken
       });
-      const { token, user } = response.data;
+      
+      const { user } = response.data;
 
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      login(user);
 
       if (user.role === 'superadmin') {
         navigate('/superadmin/dashboard');

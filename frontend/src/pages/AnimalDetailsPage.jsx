@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react'; 
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { AuthContext } from '../context/AuthContext'; 
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const AnimalDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  
+  const { user } = useContext(AuthContext);
+  const isLoggedIn = !!user;
 
   const [animal, setAnimal] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -20,9 +24,6 @@ const AnimalDetailsPage = () => {
     tiene_jardin: false,
     otros_animales: ''
   });
-
-  const token = localStorage.getItem('token');
-  const isLoggedIn = !!token;
 
   useEffect(() => {
     const fetchAnimal = async () => {
@@ -57,8 +58,7 @@ const AnimalDetailsPage = () => {
     try {
       await axios.post(
         `${API_URL}/api/adopciones`,
-        { animal_id: animal.id, ...formDatos },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { animal_id: animal.id, ...formDatos }
       );
       setEnvioStatus('success');
       setShowForm(false);

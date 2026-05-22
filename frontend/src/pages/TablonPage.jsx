@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext'; 
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const LIMIT = 9;
@@ -12,10 +13,8 @@ const TablonPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const token = localStorage.getItem('token');
-  const userString = localStorage.getItem('user');
-  const user = userString ? JSON.parse(userString) : null;
-  const isLoggedIn = token && user;
+  const { user } = useContext(AuthContext);
+  const isLoggedIn = !!user;
 
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [nuevoPost, setNuevoPost] = useState({ titulo: '', contenido: '', categoria: 'donacion', codigo_postal: '' });
@@ -45,12 +44,12 @@ const TablonPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isLoggedIn) return alert('Debes iniciar sesión para publicar');
+
     try {
-      const token = localStorage.getItem('token');
-      if (!token) return alert('Sesión expirada');
-      await axios.post(`${API_URL}/api/posts`, nuevoPost, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // 4. Eliminamos el token de los headers. ¡Magia de cookies!
+      await axios.post(`${API_URL}/api/posts`, nuevoPost);
+      
       setNuevoPost({ titulo: '', contenido: '', categoria: 'donacion', codigo_postal: '' });
       setMostrarFormulario(false);
       setMensajeExito('¡Publicación enviada! Aparecerá cuando sea aprobada.');

@@ -17,10 +17,8 @@ const MetricasPage = () => {
   useEffect(() => {
     const cargarMetricas = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`${API_URL}/api/superadmin/stats/global`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await axios.get(`${API_URL}/api/superadmin/stats/global`);
+        
         if (res.data) {
           setCounts({
             usuarios_totales: Number(res.data.usuarios_totales) || 0,
@@ -46,10 +44,7 @@ const MetricasPage = () => {
     setIsProModalOpen(true);
     setLoadingProUsers(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`${API_URL}/api/superadmin/usuarios-pro`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.get(`${API_URL}/api/superadmin/usuarios-pro`);
       setProUsers(res.data);
     } catch (err) {
       console.error("Error al cargar usuarios Pro:", err);

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 import { AuthProvider } from './context/AuthContext';
 import axios from 'axios'; 
+axios.defaults.withCredentials = true;
 // Componentes
 import Navbar from './components/Navbar'; 
 import ProtectedRoute from './components/ProtectedRoute';
@@ -34,7 +35,7 @@ import ColoniaDashboard from './pages/admin/ColoniaDashboard';
 
 axios.interceptors.response.use(
   response => response,
-  error => {
+  async error => {
     if (error.response?.status === 403 && 
         error.response?.data?.message?.includes('suspendida')) {
       
@@ -44,9 +45,12 @@ axios.interceptors.response.use(
 
       alert('⛔ Tu cuenta ha sido suspendida. Contacta con el administrador.');
       
-      setTimeout(() => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+      setTimeout(async() => {
+   try {
+          await axios.post(`${API_URL}/api/auth/logout`);
+        } catch (err) {
+          console.error("Error limpiando sesión", err);
+        }
         window.location.href = '/login';
       }, 3000);
     }

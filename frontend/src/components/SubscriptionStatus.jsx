@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -11,10 +11,7 @@ const SubscriptionStatus = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`${API_URL}/api/subscriptions/status`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await axios.get(`${API_URL}/api/subscriptions/status`);
         setStatus(res.data);
       } catch (err) {
         console.error("Error cargando suscripción", err);
@@ -28,12 +25,12 @@ const SubscriptionStatus = () => {
   const handleUpgradePro = async () => {
     setIsProcessingPayment(true);
     try {
-      const token = localStorage.getItem('token');
+      // ADIÓS localStorage y headers aquí también.
       const res = await axios.post(
         `${API_URL}/api/subscriptions/create-checkout`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        {} // Enviamos el body vacío como antes
       );
+      
       if (res.data.url) {
         window.location.href = res.data.url;
       } else {

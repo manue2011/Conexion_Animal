@@ -1,11 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react'; // 1. Añadimos useContext
+import { useNavigate } from 'react-router-dom'; // 2. Para redireccionar si no es SuperAdmin
 import axios from 'axios';
 import ModeracionTablonPage from './ModeracionTablonPage';
 import MetricasPage from '../MetricasPage';
+import { AuthContext } from '../../context/AuthContext'; // 3. Importamos el contexto
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const SuperAdminDashboard = () => {
+  const navigate = useNavigate();
+  
+  const { user, loading: authLoading } = useContext(AuthContext);
+
   const [activeTab, setActiveTab] = useState('solicitudes');
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,17 +33,33 @@ const SuperAdminDashboard = () => {
   const [filtroRol, setFiltroRol] = useState('todos');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // 5. GUARDIÁN DE RUTA: Nadie que no sea SuperAdmin puede entrar
   useEffect(() => {
+    if (authLoading) return;
+    
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    
+    if (user.role !== 'superadmin') {
+      navigate('/');
+      return;
+    }
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    // Solo cargamos datos si el usuario ya está verificado como SuperAdmin
+    if (!user || user.role !== 'superadmin') return;
+
     const fetchDatos = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-
+        // ADIÓS localStorage y headers en todas estas peticiones
         const [resSolicitudes, resEntidades, resMaestro, resStaff] = await Promise.all([
-          axios.get(`${API_URL}/api/superadmin/solicitudes`, config),
-          axios.get(`${API_URL}/api/superadmin/entidades-existentes`, config),
-          axios.get(`${API_URL}/api/superadmin/entidades-maestro`, config),
-          axios.get(`${API_URL}/api/superadmin/staff`, config),
+          axios.get(`${API_URL}/api/superadmin/solicitudes`),
+          axios.get(`${API_URL}/api/superadmin/entidades-existentes`),
+          axios.get(`${API_URL}/api/superadmin/entidades-maestro`),
+          axios.get(`${API_URL}/api/superadmin/staff`),
         ]);
 
         setSolicitudes(resSolicitudes.data);
@@ -55,9 +77,7 @@ const SuperAdminDashboard = () => {
 
     const fetchUsuarios = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        const resUsuarios = await axios.get(`${API_URL}/api/superadmin/usuarios`, config);
+        const resUsuarios = await axios.get(`${API_URL}/api/superadmin/usuarios`);
         setUsuariosList(resUsuarios.data);
       } catch (err) {
         console.warn('Ruta /usuarios no disponible aún:', err.message);
@@ -66,16 +86,12 @@ const SuperAdminDashboard = () => {
 
     fetchDatos();
     fetchUsuarios();
-  }, []);
+  }, [user]); // Dependencia en user
 
   const handleRechazar = async (id) => {
     if (!window.confirm('¿Seguro que quieres rechazar esta solicitud?')) return;
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`${API_URL}/api/superadmin/solicitudes/${id}`,
-        { accion: 'rechazar' },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.put(`${API_URL}/api/superadmin/solicitudes/${id}`, { accion: 'rechazar' });
       setSolicitudes(solicitudes.filter(sol => sol.id !== id));
     } catch (err) {
       alert('Error al rechazar la solicitud');
@@ -91,17 +107,14 @@ const SuperAdminDashboard = () => {
 
   const confirmarAprobacion = async () => {
     try {
-      const token = localStorage.getItem('token');
       const payload = {
         accion: 'aprobar',
         vinculoModo,
         entidadId: entidadIdSeleccionada,
         entidadNombre: nombreNuevaEntidad
       };
-      await axios.put(`${API_URL}/api/superadmin/solicitudes/${selectedSolicitud.id}`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.put(`${API_URL}/api/superadmin/solicitudes/${selectedSolicitud.id}`, payload);
+      
       setSolicitudes(solicitudes.filter(sol => sol.id !== selectedSolicitud.id));
       setShowModal(false);
       alert('¡Usuario aprobado y vinculado con éxito!');
@@ -118,12 +131,8 @@ const SuperAdminDashboard = () => {
 
   const confirmarEdicion = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.put(
-        `${API_URL}/api/superadmin/entidades/${editData.tipo}/${editData.id}`,
-        editData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axios.put(`${API_URL}/api/superadmin/entidades/${editData.tipo}/${editData.id}`, editData);
+      
       const nuevaLista = listadoMaestro[editData.tipo].map(item =>
         item.id === editData.id ? res.data.data : item
       );
@@ -138,14 +147,11 @@ const SuperAdminDashboard = () => {
   const handlePromoverAdmin = async () => {
     if (!window.confirm(`¿Estás seguro de darle poder total a ${nuevoAdminEmail}?`)) return;
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(`${API_URL}/api/superadmin/staff/asignar`,
-        { email: nuevoAdminEmail.toLowerCase().trim() },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.post(`${API_URL}/api/superadmin/staff/asignar`, { email: nuevoAdminEmail.toLowerCase().trim() });
       alert('¡Nuevo SuperAdmin dado de alta!');
       setNuevoAdminEmail('');
-      const res = await axios.get(`${API_URL}/api/superadmin/staff`, { headers: { Authorization: `Bearer ${token}` } });
+      
+      const res = await axios.get(`${API_URL}/api/superadmin/staff`);
       setStaff(res.data);
     } catch (err) {
       alert('El usuario no existe o ya es admin.');
@@ -157,11 +163,9 @@ const SuperAdminDashboard = () => {
     if (!window.confirm(`¿Estás seguro de que quieres ${accion} a este usuario?`)) return;
 
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`${API_URL}/api/superadmin/usuarios/${userId}/ban`,
-        { estado: currentStatus === 'archivado' ? 'activo' : 'archivado' }, 
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.put(`${API_URL}/api/superadmin/usuarios/${userId}/ban`, { 
+        estado: currentStatus === 'archivado' ? 'activo' : 'archivado' 
+      });
 
       setUsuariosList(usuariosList.map(u =>
         u.id === userId ? { ...u, estado: currentStatus === 'archivado' ? 'activo' : 'archivado' } : u 
@@ -179,6 +183,11 @@ const SuperAdminDashboard = () => {
     const matchRol = filtroRol === 'todos' || u.role === filtroRol;
     return matchSearch && matchRol;
   });
+
+  // Pantalla de carga mientras se verifica el token
+  if (authLoading || !user) {
+    return <div className="min-h-screen flex items-center justify-center text-gray-500 font-bold">Iniciando sistema central... 💻</div>;
+  }
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100 w-full overflow-x-hidden">

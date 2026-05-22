@@ -22,10 +22,7 @@ const AdoptionRequests = () => {
 
   const fetchSolicitudes = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/api/adopciones`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(`${API_URL}/api/adopciones`);
       setSolicitudes(response.data);
     } catch (error) {
       console.error("Error:", error);
@@ -39,11 +36,7 @@ const AdoptionRequests = () => {
   const handleResponse = async (id, nuevoEstado) => {
     if (!window.confirm(`¿Estás seguro de marcar esta solicitud como ${nuevoEstado}?`)) return;
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`${API_URL}/api/adopciones/${id}`,
-        { estado: nuevoEstado },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.put(`${API_URL}/api/adopciones/${id}`, { estado: nuevoEstado });
       fetchSolicitudes();
     } catch (error) {
       alert("Error al procesar la solicitud");

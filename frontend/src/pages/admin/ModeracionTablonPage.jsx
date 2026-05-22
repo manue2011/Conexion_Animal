@@ -16,10 +16,7 @@ const ModeracionTablonPage = () => {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/api/posts/superadmin/moderate?estado=${vistaActual}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(`${API_URL}/api/posts/superadmin/moderate?estado=${vistaActual}`);
       setPosts(response.data);
       setLoading(false);
     } catch (err) {
@@ -34,12 +31,7 @@ const ModeracionTablonPage = () => {
       if (!window.confirm('✨ ¿Esta petición de ayuda ya ha sido resuelta? Se archivará y dejará de ser pública.')) return;
     }
     try {
-      const token = localStorage.getItem('token');
-      await axios.patch(
-        `${API_URL}/api/posts/superadmin/moderate/${id}`,
-        { nuevoEstado },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.patch(`${API_URL}/api/posts/superadmin/moderate/${id}`, { nuevoEstado });
       setPosts(posts.filter(post => post.id !== id));
     } catch (err) {
       alert("Hubo un error al intentar cambiar el estado de la publicación.");
@@ -49,10 +41,7 @@ const ModeracionTablonPage = () => {
   const handleEliminar = async (id) => {
     if (!window.confirm('🚨 ¿PELIGRO! Vas a borrar esta publicación de la base de datos para siempre. ¿Continuar?')) return;
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/api/posts/superadmin/moderate/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.delete(`${API_URL}/api/posts/superadmin/moderate/${id}`);
       setPosts(posts.filter(post => post.id !== id));
     } catch (err) {
       alert("Hubo un error al intentar eliminar la publicación.");

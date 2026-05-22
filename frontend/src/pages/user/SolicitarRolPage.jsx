@@ -25,11 +25,11 @@ const SolicitarRolPage = () => {
     e.preventDefault();
     setLoading(true);
     setStatus({ type: '', text: '' });
+    
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(`${API_URL}/api/usuarios/solicitar-rol`, formData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Axios envía la cookie HttpOnly automáticamente
+      await axios.post(`${API_URL}/api/usuarios/solicitar-rol`, formData);
+      
       setStatus({ type: 'success', text: '¡Solicitud enviada! Nuestro equipo la revisará en breve.' });
       setTimeout(() => navigate('/'), 3000);
     } catch (error) {

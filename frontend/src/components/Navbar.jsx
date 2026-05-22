@@ -1,12 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react'; 
 import { Link, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext'; 
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const userString = localStorage.getItem('user');
-  const user = userString ? JSON.parse(userString) : null;
-  const token = localStorage.getItem('token');
-  const isLoggedIn = token && user;
+  
+  const { user, logout } = useContext(AuthContext);
+  const isLoggedIn = !!user;
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -22,11 +22,10 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  // 4. Logout simplificado: llamamos a la función del contexto
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
-    window.location.reload();
   };
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
@@ -42,7 +41,7 @@ const Navbar = () => {
             <span className="font-bold text-lg text-blue-600 tracking-tight hidden sm:block">Conexión Animal</span>
           </Link>
 
-          {/* ENLACES DESKTOP — ocultos en móvil */}
+          {/* ENLACES DESKTOP */}
           <div className="hidden lg:flex items-center gap-0.5 xl:gap-1 flex-1 justify-center">
             <Link to="/" className="text-gray-600 hover:text-blue-500 px-2 py-2 text-sm font-medium whitespace-nowrap rounded-lg hover:bg-gray-50 transition-colors">
               🏠 Inicio
@@ -74,7 +73,6 @@ const Navbar = () => {
               {isDropdownOpen && (
                 <div className="absolute left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
                   
-                  {/* NUEVO: Mis Solicitudes movido aquí si es 'user' */}
                   {isLoggedIn && user.role === 'user' && (
                     <>
                       <Link to="/mis-solicitudes" onClick={() => setIsDropdownOpen(false)} className="flex items-start gap-3 px-4 py-3 hover:bg-blue-50 transition-colors group">
@@ -110,7 +108,6 @@ const Navbar = () => {
 
           {/* ZONA DERECHA */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Acciones de usuario — DESKTOP */}
             <div className="hidden lg:flex items-center gap-1.5 border-l border-gray-200 pl-3">
               {isLoggedIn ? (
                 <>
@@ -150,21 +147,12 @@ const Navbar = () => {
               )}
             </div>
 
-            {/* HAMBURGER — solo en móvil/tablet */}
+            {/* HAMBURGER MÓVIL */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
-              aria-label="Abrir menú"
             >
-              {isMobileMenuOpen ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
+              {isMobileMenuOpen ? '✕' : '☰'}
             </button>
           </div>
         </div>
@@ -174,56 +162,29 @@ const Navbar = () => {
       {isMobileMenuOpen && (
         <div className="lg:hidden border-t border-gray-100 bg-white shadow-lg">
           <div className="px-4 py-3 space-y-1">
-            <Link to="/" onClick={closeMobileMenu} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition text-sm">🏠 Inicio</Link>
-            <Link to="/colonias" onClick={closeMobileMenu} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 font-semibold hover:bg-blue-50 hover:text-blue-600 transition text-sm">🗺️ Red de Colonias</Link>
-            <Link to="/contacto" onClick={closeMobileMenu} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition text-sm">✉️ Contacto</Link>
-            <Link to="/sobre-nosotros" onClick={closeMobileMenu} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition text-sm">🤝 Conócenos</Link>
-            <Link to="/tablon" onClick={closeMobileMenu} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 font-semibold hover:bg-orange-50 hover:text-orange-600 transition text-sm">📢 Tablón de Ayuda</Link>
+            <Link to="/" onClick={closeMobileMenu} className="block px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition text-sm">🏠 Inicio</Link>
+            <Link to="/colonias" onClick={closeMobileMenu} className="block px-3 py-2.5 rounded-lg text-gray-700 font-semibold hover:bg-blue-50 hover:text-blue-600 transition text-sm">🗺️ Red de Colonias</Link>
             
-            {/* NUEVO: Mis Solicitudes movido aquí si es 'user' (Vista Móvil) */}
             {isLoggedIn && user.role === 'user' && (
-              <Link to="/mis-solicitudes" onClick={closeMobileMenu} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-blue-50 hover:text-blue-700 transition text-sm">📋 Mis Solicitudes</Link>
+              <Link to="/mis-solicitudes" onClick={closeMobileMenu} className="block px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-blue-50 hover:text-blue-700 transition text-sm">📋 Mis Solicitudes</Link>
             )}
-
-            <Link to="/adoptados" onClick={closeMobileMenu} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-green-50 hover:text-green-700 transition text-sm">🏡 Finales Felices</Link>
-            <Link to="/planes" onClick={closeMobileMenu} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-purple-50 hover:text-purple-700 transition text-sm">⭐ Planes Protectoras</Link>
+            
+            <Link to="/adoptados" onClick={closeMobileMenu} className="block px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-green-50 hover:text-green-700 transition text-sm">🏡 Finales Felices</Link>
+            <Link to="/planes" onClick={closeMobileMenu} className="block px-3 py-2.5 rounded-lg text-gray-700 font-medium hover:bg-purple-50 hover:text-purple-700 transition text-sm">⭐ Planes Protectoras</Link>
           </div>
 
           <div className="border-t border-gray-100 px-4 py-3 space-y-2">
             {isLoggedIn ? (
               <>
-                {user.role === 'superadmin' && (
-                  <Link to="/superadmin/dashboard" onClick={closeMobileMenu} className="flex items-center gap-2 w-full bg-yellow-100 text-yellow-800 font-bold px-3 py-2.5 rounded-lg text-sm hover:bg-yellow-200 transition">
-                    👑 Cuartel General
-                  </Link>
-                )}
-                {user.role === 'admin' && (
-                  <Link to="/admin/dashboard" onClick={closeMobileMenu} className="flex items-center gap-2 w-full bg-blue-50 text-blue-700 font-bold px-3 py-2.5 rounded-lg text-sm hover:bg-blue-100 transition">
-                    Panel Admin
-                  </Link>
-                )}
-                {user.role === 'gestor' && (
-                  <Link to="/colonia/dashboard" onClick={closeMobileMenu} className="flex items-center gap-2 w-full bg-blue-100 text-blue-800 font-bold px-3 py-2.5 rounded-lg text-sm hover:bg-blue-200 transition">
-                    🐱 Gestión Colonia
-                  </Link>
-                )}
-                {user.role === 'user' && (
-                  <Link to="/solicitar-rol" onClick={closeMobileMenu} className="flex items-center gap-2 w-full bg-green-100 text-green-800 font-bold px-3 py-2.5 rounded-lg text-sm hover:bg-green-200 transition">
-                    🤝 Trabaja con nosotros
-                  </Link>
-                )}
-                <button onClick={() => { handleLogout(); closeMobileMenu(); }} className="w-full bg-red-500 hover:bg-red-600 text-white font-bold px-3 py-2.5 rounded-lg text-sm transition">
-                  Salir
-                </button>
+                {user.role === 'superadmin' && <Link to="/superadmin/dashboard" onClick={closeMobileMenu} className="block w-full bg-yellow-100 text-yellow-800 font-bold px-3 py-2.5 rounded-lg text-sm mb-2 text-center">👑 Cuartel General</Link>}
+                {user.role === 'admin' && <Link to="/admin/dashboard" onClick={closeMobileMenu} className="block w-full bg-blue-50 text-blue-700 font-bold px-3 py-2.5 rounded-lg text-sm mb-2 text-center">Panel Admin</Link>}
+                {user.role === 'gestor' && <Link to="/colonia/dashboard" onClick={closeMobileMenu} className="block w-full bg-blue-100 text-blue-800 font-bold px-3 py-2.5 rounded-lg text-sm mb-2 text-center">🐱 Gestión Colonia</Link>}
+                <button onClick={() => { handleLogout(); closeMobileMenu(); }} className="w-full bg-red-500 hover:bg-red-600 text-white font-bold px-3 py-2.5 rounded-lg text-sm transition">Salir</button>
               </>
             ) : (
               <div className="flex gap-2">
-                <Link to="/login" onClick={closeMobileMenu} className="flex-1 text-center border border-gray-300 text-gray-700 font-medium px-3 py-2.5 rounded-lg text-sm hover:bg-gray-50 transition">
-                  Entrar
-                </Link>
-                <Link to="/register" onClick={closeMobileMenu} className="flex-1 text-center bg-blue-600 text-white font-bold px-3 py-2.5 rounded-lg text-sm hover:bg-blue-700 transition">
-                  Registrarse
-                </Link>
+                <Link to="/login" onClick={closeMobileMenu} className="flex-1 text-center border border-gray-300 text-gray-700 font-medium px-3 py-2.5 rounded-lg text-sm">Entrar</Link>
+                <Link to="/register" onClick={closeMobileMenu} className="flex-1 text-center bg-blue-600 text-white font-bold px-3 py-2.5 rounded-lg text-sm">Registrarse</Link>
               </div>
             )}
           </div>

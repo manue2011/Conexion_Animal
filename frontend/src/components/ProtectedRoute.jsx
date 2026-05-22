@@ -1,14 +1,15 @@
+import { useContext } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext'; 
 
 const ProtectedRoute = ({ allowedRoles }) => {
-  const userString = localStorage.getItem('user');
-  
-  let user = null;
-  try {
-    user = userString ? JSON.parse(userString) : null;
-  } catch {
-    // Si el JSON está corrupto, tratamos como no logueado
-    localStorage.removeItem('user');
+  const { user, loading } = useContext(AuthContext);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500 font-bold">
+        Comprobando permisos... 🐾
+      </div>
+    );
   }
 
   if (!user) {

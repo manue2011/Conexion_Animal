@@ -186,9 +186,15 @@ const verifyEmail = async (req, res) => {
       { expiresIn: '1h' }
     );
 
+   res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 3600000
+    });
+
     res.status(200).json({ 
       message: 'Cuenta verificada y activada correctamente',
-      token, 
       user: activeUser 
     });
 
@@ -239,8 +245,18 @@ const login = async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    res.json({ token, user: { id: user.rows[0].id, email: user.rows[0].email, role: user.rows[0].role, plan: user.rows[0].plan } });
+    res.cookie('token', token, {
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production', 
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', 
+      maxAge: 3600000 
+    });
 
+    res.json({ 
+      message: 'Login exitoso', 
+      user: { id: user.rows[0].id, email: user.rows[0].email, role: user.rows[0].role, plan: user.rows[0].plan } 
+     
+    });
   } catch (err) {
     console.error('Error en login:', err.message);
     res.status(500).json({ message: 'Error del servidor' });
@@ -416,5 +432,25 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ message: 'Error del servidor.' });
   }
 };
+const logout = (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+  });
+  res.status(200).json({ message: 'Sesión cerrada correctamente' });
+};
 
-module.exports = { register, verifyEmail, login, resendPin, forgotPassword, resetPassword };
+const verifySession = async (req, res) => {
+  try {
+    const user = await pool.query('SELECT id, email, role, plan FROM users WHERE id = $1', [req.user.id]);
+    if (user.rows.length === 0) {
+       return res.status(401).json({ message: 'Usuario no encontrado' });
+    }
+    res.json({ isAuthenticated: true, user: user.rows[0] });
+  } catch (err) {
+    res.status(500).json({ message: 'Error verificando sesión' });
+  }
+};
+
+module.exports = { register, verifyEmail, login, resendPin, forgotPassword, resetPassword, logout, verifySession };

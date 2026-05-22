@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useContext } from 'react'; 
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
+import { AuthContext } from '../../context/AuthContext'; 
 import AnimalForm from '../../components/AnimalForm';
 import AnimalList from '../../components/AnimalList';
 import AdoptionRequests from '../../components/AdoptionRequests';
@@ -10,8 +10,9 @@ import SubscriptionStatus from '../../components/SubscriptionStatus';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const navigate = useNavigate();  
+  const { user, login, logout, loading } = useContext(AuthContext);
+  
   const [activeView, setActiveView] = useState('resumen');
   const [refreshList, setRefreshList] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -24,21 +25,20 @@ const AdminDashboard = () => {
   const [protectoraInfo, setProtectoraInfo] = useState(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [perfilForm, setPerfilForm] = useState({ descripcion: '', direccion: '', telefono: '' });
+  
+  const [dataFetched, setDataFetched] = useState(false); // Para evitar llamadas dobles
 
-  const fetchData = useCallback(async () => {
+  // 4. Adaptamos fetchData para no usar localStorage ni headers
+  const fetchData = useCallback(async (currentUser, updateLogin) => {
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const resProt = await axios.get(`${API_URL}/api/usuarios/mi-protectora`, config);
+      const resProt = await axios.get(`${API_URL}/api/usuarios/mi-protectora`);
       setProtectoraInfo(resProt.data);
-      if (resProt.data.plan) {
-        setUser(prev => ({ ...prev, plan: resProt.data.plan }));
-        const localUserData = JSON.parse(localStorage.getItem('user'));
-        if (localUserData && localUserData.plan !== resProt.data.plan) {
-          localUserData.plan = resProt.data.plan;
-          localStorage.setItem('user', JSON.stringify(localUserData));
-        }
+      
+      // Si el plan en base de datos es distinto al que tenemos en pantalla, actualizamos el contexto global
+      if (resProt.data.plan && currentUser && currentUser.plan !== resProt.data.plan) {
+        updateLogin({ ...currentUser, plan: resProt.data.plan });
       }
+      
       setPerfilForm({
         descripcion: resProt.data.descripcion || '',
         direccion: resProt.data.direccion || '',
@@ -53,34 +53,42 @@ const AdminDashboard = () => {
     setAnimalAEditar(animal);
     setActiveView('registrar'); 
   };
+
+  // 5. El Guardián de la Ruta: Espera a que termine de cargar, y si no hay usuario, lo expulsa.
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    if (!token || !userData) { navigate('/login'); return; }
-    const parsedUser = JSON.parse(userData);
-    if (parsedUser.role !== 'admin' && parsedUser.role !== 'superadmin') { navigate('/'); return; }
-    setUser(parsedUser);
-    fetchData();
-  }, [navigate, fetchData]);
+    if (loading) return; // Esperamos a que el AuthContext pregunte al backend
+    
+    if (!user) { 
+      navigate('/login'); 
+      return; 
+    }
+    
+    if (user.role !== 'admin' && user.role !== 'superadmin') { 
+      navigate('/'); 
+      return; 
+    }
+    
+    // Solo hacemos la petición 1 vez
+    if (!dataFetched) {
+      fetchData(user, login);
+      setDataFetched(true);
+    }
+  }, [loading, user, navigate, fetchData, login, dataFetched]);
 
   const handleUpdatePerfil = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`${API_URL}/api/usuarios/protectora/${protectoraInfo.id}`, perfilForm, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.put(`${API_URL}/api/usuarios/protectora/${protectoraInfo.id}`, perfilForm);
       setIsProfileModalOpen(false);
-      fetchData();
+      fetchData(user, login); // Refrescamos los datos
       alert("¡Perfil de protectora completado!");
     } catch (err) {
       alert("Error al actualizar perfil");
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
@@ -91,10 +99,9 @@ const AdminDashboard = () => {
     if (isSubmittingNeed) return;
     setIsSubmittingNeed(true);
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(`${API_URL}/api/necesidades`, { ...needForm, protectora_id: protectoraInfo.id }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // ADIÓS headers
+      await axios.post(`${API_URL}/api/necesidades`, { ...needForm, protectora_id: protectoraInfo.id });
+      
       alert(needForm.prioridad === 'urgente' ? '¡Alerta enviada a los voluntarios!' : 'Petición publicada correctamente.');
       setIsNeedModalOpen(false);
       setNeedForm({ titulo: '', categoria: 'comida', descripcion: '', prioridad: 'normal' });
@@ -105,7 +112,8 @@ const AdminDashboard = () => {
     }
   };
 
-  if (!user) return <div className="p-10">Cargando...</div>;
+  // Mientras verifica la sesión, mostramos un cargando
+  if (loading || !user) return <div className="p-10 text-gray-500 font-bold text-center mt-20 animate-pulse">Cargando tu panel de control... 🐾</div>;
 
   const renderResumen = (
     <div className="animate-fade-in">

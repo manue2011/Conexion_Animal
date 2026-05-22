@@ -23,10 +23,7 @@ const MisSolicitudesPage = () => {
   useEffect(() => {
     const fetchMisSolicitudes = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`${API_URL}/api/adopciones/mis-solicitudes`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await axios.get(`${API_URL}/api/adopciones/mis-solicitudes`);
         setSolicitudes(res.data);
       } catch (err) {
         console.error("Error al cargar tus solicitudes:", err);
