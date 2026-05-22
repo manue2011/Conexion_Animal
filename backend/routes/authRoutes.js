@@ -1,6 +1,6 @@
 const router = require('express').Router();
-const { register, verifyEmail, login, resendPin, forgotPassword, resetPassword} = require('../controllers/authController');
-const { verifyToken } = require('../middlewares/verifyToken');
+const { register, verifyEmail, login, resendPin, forgotPassword, resetPassword, logout,verifySession} = require('../controllers/authController');
+const { verifyToken } = require('../middleware/authMiddleware')
 
 router.post('/register', register);
 router.post('/verify-email', verifyEmail); 
