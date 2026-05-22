@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react'; 
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
+import { AuthContext } from '../context/AuthContext'; 
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const RegisterPage = () => {
   const { executeRecaptcha } = useGoogleReCaptcha();
   const navigate = useNavigate();
+  
+  const { login } = useContext(AuthContext);
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -24,7 +27,6 @@ const RegisterPage = () => {
   const [timeLeft, setTimeLeft] = useState(300);
   const [canResend, setCanResend] = useState(false);
 
-  // Efecto que resta 1 segundo cada segundo cuando estamos en el Paso 2
   useEffect(() => {
     if (step === 2 && timeLeft > 0) {
       const timer = setInterval(() => {
@@ -82,11 +84,10 @@ const RegisterPage = () => {
       setCanResend(false);
 
     } catch (error) {
-      // MAGIA AQUÍ: Atrapamos el error 429 (Usuario intenta registrarse otra vez pero ya tiene un código activo)
+      // MAGIA AQUÍ: Atrapamos el error 429
       if (error.response && error.response.status === 429) {
         setMessage({ type: 'success', text: 'Ya tienes un código en tu correo. ¡Introdúcelo aquí!' });
-        setStep(2); // Lo pasamos directamente a la pantalla del PIN
-        // Como no sabemos exactamente cuántos segundos le quedan de los 5 min, le ponemos un estimado visual para que espere
+        setStep(2); 
         setTimeLeft(60); 
         setCanResend(false);
       } else {
@@ -110,14 +111,14 @@ const RegisterPage = () => {
         pin: pin
       });
 
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
+      // 4. ADIÓS localStorage. Usamos el contexto para loguear al usuario
+      login(res.data.user);
       
       setMessage({ type: 'success', text: '¡Cuenta verificada! Entrando...' });
       
+      // Ya no hace falta window.location.reload()
       setTimeout(() => {
         navigate('/');
-        window.location.reload();
       }, 1500);
 
     } catch (error) {
@@ -128,7 +129,7 @@ const RegisterPage = () => {
     }
   };
 
-    // REENVIAR PIN
+  // REENVIAR PIN
   const handleResendPin = async () => {
     if (!canResend) return;
     setMessage(null);
@@ -137,15 +138,14 @@ const RegisterPage = () => {
     try {
       const recaptchaToken = await executeRecaptcha('resend_pin');
       
-      // Llamamos a la nueva ruta, que SOLO necesita el email y el recaptcha
       await axios.post(`${API_URL}/api/auth/resend-pin`, {
         email: formData.email,
         recaptchaToken
       });
 
       setMessage({ type: 'success', text: '¡Te hemos enviado un nuevo código!' });
-      setTimeLeft(300); // Reiniciamos el reloj de 5 mins
-      setCanResend(false); // Bloqueamos el botón temporalmente
+      setTimeLeft(300); 
+      setCanResend(false); 
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'No se pudo reenviar el código. Intenta de nuevo.';
       setMessage({ type: 'error', text: errorMsg });

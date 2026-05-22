@@ -4,6 +4,7 @@ const cors = require('cors');
 const db = require('./config/db'); 
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 
 // 1. IMPORTACIÓN DE RUTAS
 const coloniaRoutes = require('./routes/coloniaRoutes');
@@ -21,6 +22,7 @@ const app = express();
 
 app.set('trust proxy', 1);
 app.use(helmet());
+app.use(cookieParser());
 
 const allowedOrigins = [
   'http://localhost:5173',                       

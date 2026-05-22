@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
-// Creamos el contexto global
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -8,26 +8,34 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Sincroniza con el localStorage que ya usa tu aplicación
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
+    const checkSession = async () => {
+      try {
+        const response = await axios.get('/api/auth/verify');
+        if (response.data.isAuthenticated) {
+          setUser(response.data.user); 
+        }
+      } catch (error) {
+        setUser(null);
+      } finally {
+        setLoading(false); 
+      }
+    };
 
-    if (token && userData) {
-      setUser(JSON.parse(userData));
-    }
-    setLoading(false);
+    checkSession();
   }, []);
 
-  const login = (userData, token) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
+  const login = (userData) => {
     setUser(userData);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
+  const logout = async () => {
+    try {
+      await axios.post('/api/auth/logout');
+    } catch (error) {
+      console.error("Error al cerrar sesión", error);
+    } finally {
+      setUser(null);
+    }
   };
 
   return (

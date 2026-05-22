@@ -3,14 +3,10 @@ const jwt = require('jsonwebtoken');
 
 // 1. Verificar si el usuario está logueado (tiene Token)
 const verifyToken = async (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Acceso denegado. No se proporcionó token.' });
+const token = req.cookies.token;  
+if (!token) {
+    return res.status(401).json({ message: 'Acceso denegado. No se encontró la cookie de sesión.' });
   }
-
-  const token = authHeader.split(' ')[1];
-
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 const result = await pool.query(

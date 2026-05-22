@@ -1,17 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react'; 
+import { useNavigate } from 'react-router-dom'; 
 import axios from 'axios';
 import SubscriptionStatus from '../../components/SubscriptionStatus';
+import { AuthContext } from '../../context/AuthContext'; 
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const ColoniaDashboard = () => {
+  const navigate = useNavigate();
+  
+  const { user, loading: authLoading } = useContext(AuthContext);
+
   const [animales, setAnimales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeView, setActiveView] = useState('animales');
   const [coloniaInfo, setColoniaInfo] = useState(null);
   
-  // NUEVO: Estado para el filtro de fecha
   const [filtroFecha, setFiltroFecha] = useState('desc');
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -26,13 +31,25 @@ const ColoniaDashboard = () => {
   const [needForm, setNeedForm] = useState({ titulo: '', categoria: 'comida', descripcion: '', prioridad: 'normal' });
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  useEffect(() => {
+    if (authLoading) return; 
+    
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    
+    if (user.role !== 'gestor' && user.role !== 'superadmin') {
+      navigate('/');
+      return;
+    }
+  }, [user, authLoading, navigate]);
+
   // Cargar datos de la colonia (solo una vez)
   const fetchColoniaInfo = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const resColonia = await axios.get(`${API_URL}/api/usuarios/mi-colonia`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // ADIÓS localStorage y headers de Authorization
+      const resColonia = await axios.get(`${API_URL}/api/usuarios/mi-colonia`);
       setColoniaInfo(resColonia.data);
       setPerfilForm({
         descripcion: resColonia.data.descripcion || '',
@@ -44,20 +61,16 @@ const ColoniaDashboard = () => {
     }
   };
 
-  // Cargar animales (Se ejecuta al inicio y cuando cambia el filtro de fecha)
+  // Cargar animales
   const fetchAnimales = async () => {
     setLoading(true);
     setError('');
     try {
-      const token = localStorage.getItem('token');
-      // Pasamos el orden y ponemos un límite alto para ver todos los gatos
       const params = new URLSearchParams({ order: filtroFecha, limit: 100 }); 
       
-      const resAnimales = await axios.get(`${API_URL}/api/animales?${params}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // ADIÓS headers
+      const resAnimales = await axios.get(`${API_URL}/api/animales?${params}`);
       
-      // SOLUCIÓN AL PANTALLAZO BLANCO (e.map is not a function)
       const data = resAnimales.data.animales || [];
       setAnimales(data);
       
@@ -68,21 +81,24 @@ const ColoniaDashboard = () => {
     }
   };
 
+  // Solo hacemos fetch si el usuario ya está verificado por el contexto
   useEffect(() => {
-    fetchColoniaInfo();
-  }, []);
+    if (user && !authLoading) {
+      fetchColoniaInfo();
+    }
+  }, [user, authLoading]);
 
   useEffect(() => {
-    fetchAnimales();
-  }, [filtroFecha]); // Se recarga automáticamente al cambiar el filtro
+    if (user && !authLoading) {
+      fetchAnimales();
+    }
+  }, [filtroFecha, user, authLoading]); 
 
   const handleUpdatePerfil = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`${API_URL}/api/usuarios/colonia/${coloniaInfo.id}`, perfilForm, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // ADIÓS headers
+      await axios.put(`${API_URL}/api/usuarios/colonia/${coloniaInfo.id}`, perfilForm);
       setIsProfileModalOpen(false);
       fetchColoniaInfo();
       alert('¡Perfil de colonia actualizado!');
@@ -104,21 +120,21 @@ const ColoniaDashboard = () => {
     setIsSubmitting(true);
     setFormError('');
     try {
-      const token = localStorage.getItem('token');
       const data = new FormData();
       data.append('nombre', formData.nombre);
-      data.append('especie', formData.especie); // Siempre será 'Gato'
+      data.append('especie', formData.especie); 
       data.append('edad', formData.edad);
       data.append('urgent', formData.urgent);
       data.append('descripcion', formData.descripcion);
       data.append('colonia_id', coloniaInfo.id);
       if (file) data.append('foto_url', file);
       
+      // CUIDADO AQUÍ: Quitamos Authorization pero MANTENEMOS multipart/form-data
       await axios.post(`${API_URL}/api/animales`, data, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      await fetchAnimales(); // Recargamos la lista
+      await fetchAnimales(); 
       setIsModalOpen(false);
       setFormData({ nombre: '', especie: 'Gato', edad: '', urgent: false, descripcion: '' });
       setFile(null);
@@ -132,9 +148,9 @@ const ColoniaDashboard = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('¿Estás seguro de que quieres archivar este registro?')) return;
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/api/animales/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      fetchAnimales(); // Recargamos para asegurar el orden
+      // ADIÓS headers
+      await axios.delete(`${API_URL}/api/animales/${id}`);
+      fetchAnimales(); 
     } catch (err) {
       alert('No se pudo eliminar el animal.');
     }
@@ -145,10 +161,8 @@ const ColoniaDashboard = () => {
     if (isSubmittingNeed) return;
     setIsSubmittingNeed(true);
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(`${API_URL}/api/necesidades`, { ...needForm, colonia_id: coloniaInfo.id }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // ADIÓS headers
+      await axios.post(`${API_URL}/api/necesidades`, { ...needForm, colonia_id: coloniaInfo.id });
       alert(needForm.prioridad === 'urgente' ? '¡Alerta enviada a los voluntarios!' : 'Petición publicada correctamente.');
       setIsNeedModalOpen(false);
       setNeedForm({ titulo: '', categoria: 'comida', descripcion: '', prioridad: 'normal' });
@@ -158,6 +172,11 @@ const ColoniaDashboard = () => {
       setIsSubmittingNeed(false);
     }
   };
+
+  // Pantalla de carga mientras verificamos la sesión
+  if (authLoading || !user) {
+    return <div className="min-h-screen flex items-center justify-center text-gray-500 font-bold">Verificando acceso... 🐾</div>;
+  }
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100 w-full overflow-x-hidden">
@@ -298,7 +317,6 @@ const ColoniaDashboard = () => {
         )}
       </main>
 
-      {/* --- MODALES OMITIDOS PARA BREVEDAD (SON EXACTAMENTE LOS MISMOS QUE TENÍAS) --- */}
       {/* MODAL: PERFIL */}
       {isProfileModalOpen && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[60] backdrop-blur-sm">

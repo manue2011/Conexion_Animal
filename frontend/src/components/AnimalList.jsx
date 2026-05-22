@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -15,15 +15,12 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
   const fetchAnimales = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const params = new URLSearchParams({ page, limit: 8, order: filtroFecha });
       if (filtroEspecie) params.append('especie', filtroEspecie);
       
       const endpoint = view === 'activos' ? '/api/animales' : '/api/animales/adoptados/lista';
       
-      const response = await axios.get(`${API_URL}${endpoint}?${params}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(`${API_URL}${endpoint}?${params}`);
       
       const data = response.data.animales || [];
       setAnimales(data);
@@ -41,10 +38,7 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
   const handleDelete = async (id) => {
     if (!window.confirm('¿Seguro que quieres archivar este animal?')) return;
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/api/animales/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.delete(`${API_URL}/api/animales/${id}`);
       fetchAnimales();
     } catch (error) {
       alert('Error al eliminar');
@@ -54,12 +48,9 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
   const handleMarkAdopted = async (animal) => {
     if (!window.confirm(`¿Seguro que quieres marcar a ${animal.nombre} como adoptado?`)) return;
     try {
-      const token = localStorage.getItem('token');
       const payload = { ...animal, estado: 'adoptado' };
 
-      await axios.put(`${API_URL}/api/animales/${animal.id}`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.put(`${API_URL}/api/animales/${animal.id}`, payload);
       
       fetchAnimales();
     } catch (error) {
@@ -154,10 +145,8 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
                     {animal.edad ? `${animal.edad} años` : 'Edad desconocida'}
                   </p>
 
-                  {/* SECCIÓN DE BOTONES CORREGIDA */}
                   <div className="flex items-center justify-between pt-4 mt-auto border-t border-gray-100">
                     {view === 'activos' ? (
-                      // BOTONES PARA ANIMALES ACTIVOS
                       <>
                         <button 
                           onClick={() => setEditAnimal(animal)} 
@@ -184,7 +173,6 @@ const AnimalList = ({ refreshTrigger, setEditAnimal }) => {
                         </button>
                       </>
                     ) : (
-                      // BOTÓN ÚNICO PARA ANIMALES ADOPTADOS (SOLO VER)
                       <button 
                         onClick={() => setEditAnimal(animal)} 
                         className="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-3 rounded-xl transition-all flex items-center gap-2 w-full justify-center active:scale-95" 

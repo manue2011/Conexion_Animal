@@ -1,16 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react'; 
 import axios from 'axios';
+import { AuthContext } from '../context/AuthContext'; 
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // 1. CORREGIDA LA CABECERA: quitado el duplicado y añadido readOnly
 const AnimalForm = ({ animalAEditar, onSuccess, onCancel, readOnly }) => {
-  let user = {};
-  try {
-    user = JSON.parse(localStorage.getItem('user') || '{}');
-  } catch {
-    user = {};
-  }
+  
+  const { user } = useContext(AuthContext);
 
   const [formData, setFormData] = useState({
     nombre: '', descripcion: '', edad: '', especie: '', ubicacion: '', urgent: false
@@ -65,16 +62,14 @@ const AnimalForm = ({ animalAEditar, onSuccess, onCancel, readOnly }) => {
     setLoading(true);
     setMessage(null);
     try {
-      const token = localStorage.getItem('token');
       if (animalAEditar) {
         const payload = {
           ...formData,
           estado: animalAEditar.estado || 'activo'
         };
 
-        await axios.put(`${API_URL}/api/animales/${animalAEditar.id}`, payload, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        // ADIÓS a la cabecera Authorization
+        await axios.put(`${API_URL}/api/animales/${animalAEditar.id}`, payload);
         setMessage({ type: 'success', text: '¡Animal actualizado correctamente!' });
       } else {
         const data = new FormData();
@@ -82,7 +77,7 @@ const AnimalForm = ({ animalAEditar, onSuccess, onCancel, readOnly }) => {
         if (file) data.append('foto_url', file);
 
         await axios.post(`${API_URL}/api/animales`, data, {
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
         setMessage({ type: 'success', text: '¡Animal registrado correctamente!' });
         

@@ -1,36 +1,30 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react'; 
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-
+import { AuthContext } from '../context/AuthContext'; 
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-
 const PlanesPage = () => {
-  const userString = localStorage.getItem('user');
-  const user = userString ? JSON.parse(userString) : null;
+  const { user } = useContext(AuthContext);
   const esProtectora = user?.role === 'admin';
-
 
   const [aviso, setAviso] = useState('');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-
 
   const handlePlanClick = (e) => {
     e.preventDefault();
     setAviso(`Tu cuenta actual es de tipo '${user.role.toUpperCase()}'. Estos planes son exclusivos para perfiles de Protectora. Si representas a una, ve a la sección de Contacto para actualizar tu cuenta.`);
   };
 
-
   const handleUpgradePro = async () => {
     setIsProcessingPayment(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await axios.post(
         `${API_URL}/api/subscriptions/create-checkout`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        {} 
       );
+      
       if (res.data.url) {
         window.location.href = res.data.url;
       } else {
@@ -42,11 +36,9 @@ const PlanesPage = () => {
     }
   };
 
-
   return (
     <div className="min-h-screen bg-gray-50 py-10 md:py-16">
       <div className="max-w-7xl mx-auto px-4">
-
 
         <div className="text-center mb-10 md:mb-16">
           <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">Planes para Protectoras</h1>
@@ -57,16 +49,13 @@ const PlanesPage = () => {
           </p>
         </div>
 
-
         {aviso && (
           <div className="max-w-2xl mx-auto mb-8 bg-blue-50 border border-blue-200 text-blue-800 px-6 py-4 rounded-xl text-center text-sm md:text-base animate-fade-in">
             <strong>⚠️ Atención:</strong> {aviso}
           </div>
         )}
 
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
-
 
           {/* PLAN FREE */}
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-200 flex flex-col">
@@ -86,7 +75,6 @@ const PlanesPage = () => {
               <li className="flex items-center gap-3 text-gray-400"><span className="text-gray-300">✗</span> Sin insignia de verificación</li>
             </ul>
 
-
             {!user ? (
               <Link to="/register" className="w-full block text-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 rounded-xl transition-colors text-sm md:text-base">
                 Empezar Gratis
@@ -103,7 +91,6 @@ const PlanesPage = () => {
               </button>
             )}
           </div>
-
 
           {/* PLAN PRO */}
           <div className="bg-gradient-to-b from-blue-900 to-blue-950 rounded-3xl p-6 md:p-8 shadow-2xl border border-blue-800 flex flex-col relative overflow-hidden md:-translate-y-4">
@@ -125,7 +112,6 @@ const PlanesPage = () => {
               <li className="flex items-center gap-3 text-blue-100"><span className="text-yellow-400 font-bold">✓</span> Insignia de Protectora Verificada</li>
               <li className="flex items-center gap-3 text-blue-100"><span className="text-yellow-400 font-bold">✓</span> Soporte VIP por WhatsApp 24/7</li>
             </ul>
-
 
             {!user ? (
               <Link to="/register" className="w-full block text-center bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-yellow-950 font-black py-3 rounded-xl transition-all shadow-lg hover:shadow-yellow-500/20 relative z-10 text-sm md:text-base">
@@ -149,12 +135,10 @@ const PlanesPage = () => {
             )}
           </div>
 
-
         </div>
       </div>
     </div>
   );
 };
 
-
-export default PlanesPage; 
+export default PlanesPage;
