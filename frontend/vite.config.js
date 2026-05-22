@@ -1,119 +1,23 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
-import { AuthProvider } from './context/AuthContext';
-import axios from 'axios'; 
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import Sitemap from 'vite-plugin-sitemap'
 
-// La regla de oro para las cookies
-axios.defaults.withCredentials = true;
-
-// Componentes
-import Navbar from './components/Navbar'; 
-import ProtectedRoute from './components/ProtectedRoute';
-import CookieBanner from './components/CookieBanner';
-import Footer from './components/Footer';
-
-// Páginas
-import TablonPage from './pages/TablonPage'; 
-import ModeracionTablonPage from './pages/admin/ModeracionTablonPage';
-import ColoniasPublic from './pages/ColoniasPublic';
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import SolicitarRolPage from './pages/user/SolicitarRolPage';
-import AnimalDetailsPage from './pages/AnimalDetailsPage';
-import MisSolicitudesPage from './pages/user/MisSolicitudesPage.jsx';
-import PoliticaPrivacidad from './pages/PoliticaPrivacidad';
-import TerminosCondiciones from './pages/TerminosCondiciones';
-import ContactoPage from './pages/ContactoPage';
-import SobreNosotros from './pages/SobreNosotros';
-import AdoptadosPage from './pages/AdoptadosPage';
-import PlanesPage from './pages/PlanesPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-
-// Páginas Privadas
-import AdminDashboard from './pages/admin/AdminDashboard';
-import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
-import ColoniaDashboard from './pages/admin/ColoniaDashboard'; 
-
-axios.interceptors.response.use(
-  response => response,
-  async error => {
-    if (error.response?.status === 403 && 
-        error.response?.data?.message?.includes('suspendida')) {
-      
-      if (window.location.pathname === '/login') {
-        return Promise.reject(error);
-      }
-
-      alert('⛔ Tu cuenta ha sido suspendida. Contacta con el administrador.');
-      
-      setTimeout(async() => {
-        try {
-          // CORREGIDO: Ruta limpia sin la variable API_URL
-          await axios.post('/api/auth/logout');
-        } catch (err) {
-          console.error("Error limpiando sesión", err);
-        }
-        window.location.href = '/login';
-      }, 3000);
-    }
-    return Promise.reject(error);
-  }
-);
-
-function App() {
- return (
-    <GoogleReCaptchaProvider reCaptchaKey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}>
-      <BrowserRouter>
-        
-        <AuthProvider>
-          
-          <Navbar />
-          <main className="min-h-screen">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/animal/:id" element={<AnimalDetailsPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/tablon" element={<TablonPage />} />
-              <Route path="/privacidad" element={<PoliticaPrivacidad />} />
-              <Route path="/terminos" element={<TerminosCondiciones />} />
-              <Route path="/contacto" element={<ContactoPage />} />
-              <Route path="/sobre-nosotros" element={<SobreNosotros />} />
-              <Route path="/adoptados" element={<AdoptadosPage />} />
-              <Route path="/planes" element={<PlanesPage />} />
-         
-              <Route element={<ProtectedRoute allowedRoles={['user']} />}>
-                <Route path="/solicitar-rol" element={<SolicitarRolPage />} />
-                <Route path="/mis-solicitudes" element={<MisSolicitudesPage />} />
-              </Route>
-
-              <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              </Route>
-
-              <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
-                <Route path="/superadmin/dashboard" element={<SuperAdminDashboard />} />
-                <Route path="/superadmin/moderacion-tablon" element={<ModeracionTablonPage />} />
-              </Route>
-
-              <Route element={<ProtectedRoute allowedRoles={['gestor']} />}>
-                <Route path="/colonia/dashboard" element={<ColoniaDashboard />} />
-              </Route>
-              <Route path="/colonias" element={<ColoniasPublic />} />
-            </Routes>
-          </main>
-          <Footer />
-          <CookieBanner />
-
-        </AuthProvider>
-
-      </BrowserRouter>
-    </GoogleReCaptchaProvider>
-  );
-}
-
-export default App;
+export default defineConfig({
+  plugins: [
+    react(),
+    Sitemap({
+      hostname: 'https://conexion-animal-bice.vercel.app',
+      dynamicRoutes: [
+        '/',
+        '/tablon',
+        '/privacidad',
+        '/terminos',
+        '/contacto',
+        '/sobre-nosotros',
+        '/adoptados',
+        '/planes',
+        '/colonias'
+      ]
+    })
+  ],
+})
