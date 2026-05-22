@@ -1,9 +1,13 @@
-
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 import { AuthProvider } from './context/AuthContext';
 import axios from 'axios'; 
-axios.defaults.withCredentials = true;
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+axios.defaults.baseURL = API_URL; 
+axios.defaults.withCredentials = true; 
+
 // Componentes
 import Navbar from './components/Navbar'; 
 import ProtectedRoute from './components/ProtectedRoute';
@@ -28,6 +32,7 @@ import AdoptadosPage from './pages/AdoptadosPage';
 import PlanesPage from './pages/PlanesPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+
 // Páginas Privadas
 import AdminDashboard from './pages/admin/AdminDashboard';
 import SuperAdminDashboard from './pages/admin/SuperAdminDashboard';
@@ -46,7 +51,8 @@ axios.interceptors.response.use(
       alert('⛔ Tu cuenta ha sido suspendida. Contacta con el administrador.');
       
       setTimeout(async() => {
-   try {
+        try {
+          // Ahora API_URL sí existe para poder desloguear al usuario baneado
           await axios.post(`${API_URL}/api/auth/logout`);
         } catch (err) {
           console.error("Error limpiando sesión", err);
@@ -63,13 +69,11 @@ function App() {
     <GoogleReCaptchaProvider reCaptchaKey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}>
       <BrowserRouter>
         
-        {/* AÑADE ESTA ETIQUETA AQUÍ */}
         <AuthProvider>
           
           <Navbar />
           <main className="min-h-screen">
             <Routes>
-              {/* Aquí van todas tus rutas exactamente igual que las tienes */}
               <Route path="/" element={<HomePage />} />
               <Route path="/animal/:id" element={<AnimalDetailsPage />} />
               <Route path="/login" element={<LoginPage />} />
