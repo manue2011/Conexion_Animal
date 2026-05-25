@@ -57,8 +57,8 @@
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/tu-usuario/conexion-animal.git
-cd conexion-animal
+git clone https://github.com/manue2011/conexion_animal.git
+cd conexion_animal
 ```
 
 ### 2. Configurar el Backend
@@ -66,7 +66,7 @@ cd conexion-animal
 ```bash
 cd backend
 npm install
-cp .env.example .env   # Rellenar las variables (ver sección Variables de Entorno)
+cp .env.example .env   # Rellenar las variables 
 docker-compose up -d   # Levantar PostgreSQL en Docker
 npm run migrate        # Ejecutar migraciones
 npm run seed           # Poblar con datos de prueba
@@ -219,6 +219,6 @@ El proyecto incluye un plan de pruebas con casos documentados en Postman que cub
 
 ## 👨‍💻 Autor
 
-**Manuel Zarate** — [@tu-usuario-github](https://github.com/manue2011)
+**Manuel Zarate** — [@manue2011](https://github.com/manue2011)
 
 Proyecto Final de Ciclo · DAW · IES Virgen de la Paloma · Madrid · 2026
